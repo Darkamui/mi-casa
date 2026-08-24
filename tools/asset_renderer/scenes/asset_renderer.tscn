@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://2taw7p0b5if4"]
+
+[ext_resource type="Script" uid="uid://bmkrhnh3uksg8" path="res://scripts/renderer_controller.gd" id="1_script"]
+
+[node name="AssetRenderer" type="Node3D" unique_id=212926578]
+script = ExtResource("1_script")
+
+[node name="RenderViewport" type="SubViewport" parent="." unique_id=1043283290]
+unique_name_in_owner = true
+size = Vector2i(1024, 1024)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="RenderViewport" unique_id=1495489737]
+unique_name_in_owner = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="RenderViewport" unique_id=1227641153]
+unique_name_in_owner = true
+
+[node name="Camera3D" type="Camera3D" parent="RenderViewport" unique_id=95303363]
+unique_name_in_owner = true
+current = true
+
+[node name="ModelRoot" type="Node3D" parent="RenderViewport" unique_id=1697820014]
+unique_name_in_owner = true
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1860184419]
+
+[node name="PreviewRect" type="TextureRect" parent="UI" unique_id=386242280]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ExportPanel" type="PanelContainer" parent="UI" unique_id=386242281]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 620.0
+offset_bottom = 56.0
+
+[node name="ExportRow" type="HBoxContainer" parent="UI/ExportPanel" unique_id=682026333]
+layout_mode = 2
+
+[node name="ExportNameField" type="LineEdit" parent="UI/ExportPanel/ExportRow" unique_id=2054626463]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+placeholder_text = "export name, e.g. fridge_000"
+
+[node name="WallPivotCheckbox" type="CheckBox" parent="UI/ExportPanel/ExportRow" unique_id=2054626464]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Wall mount"
+
+[node name="FloorCoveringCheckbox" type="CheckBox" parent="UI/ExportPanel/ExportRow" unique_id=2054626465]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Floor covering (rug/carpet)"
+
+[node name="KeyLightOffCheckbox" type="CheckBox" parent="UI/ExportPanel/ExportRow" unique_id=2054626466]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Key light off (shadow pass)"
+
+[node name="ExportButton" type="Button" parent="UI/ExportPanel/ExportRow" unique_id=713629365]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Export PNG"
