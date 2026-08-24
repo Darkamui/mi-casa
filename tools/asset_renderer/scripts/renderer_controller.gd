@@ -35,6 +35,7 @@ const CAMERA_TARGET_Y := 1.6542215
 @onready var model_root: Node3D = %ModelRoot
 @onready var export_name_field: LineEdit = %ExportNameField
 @onready var export_button: Button = %ExportButton
+@onready var wall_pivot_checkbox: CheckBox = %WallPivotCheckbox
 @onready var preview_rect: TextureRect = %PreviewRect
 
 func _ready() -> void:
@@ -44,18 +45,31 @@ func _ready() -> void:
 	_configure_camera()
 	export_button.pressed.connect(_on_export_button_pressed)
 	model_root.child_entered_tree.connect(_on_model_root_child_entered)
+	wall_pivot_checkbox.toggled.connect(_on_wall_pivot_toggled)
 	# A model dropped into ModelRoot in the editor's Local scene tree (the
 	# natural workflow) and saved is already a child by the time _ready()
 	# runs, so child_entered_tree never fires for it -- without this, the
 	# camera stays at _configure_camera()'s unfit default ortho size.
 	if model_root.get_child_count() > 0:
-		align_current_model()
+		align_current_model(_current_pivot_mode())
+
+func _current_pivot_mode() -> String:
+	return "wall" if wall_pivot_checkbox.button_pressed else "floor"
 
 func _on_model_root_child_entered(_node: Node) -> void:
 	# Auto-fit runs the moment a model is placed (spec §6, step 1) so the
 	# human's "confirm framing looks correct" workflow step has something
 	# to look at before they ever touch the export field.
-	align_current_model()
+	align_current_model(_current_pivot_mode())
+
+func _on_wall_pivot_toggled(_pressed: bool) -> void:
+	# Godot 4 has no live console for calling align_current_model("wall")
+	# by hand while Play is running (no scripting REPL/eval panel exists in
+	# the stock editor) -- this checkbox is the actual mechanism for the
+	# wall-mount pivot the README describes. Re-aligns immediately so
+	# toggling after a model is already placed still takes effect.
+	if model_root.get_child_count() > 0:
+		align_current_model(_current_pivot_mode())
 
 func _configure_environment() -> void:
 	var env := Environment.new()
@@ -124,7 +138,12 @@ func align_current_model(pivot_mode: String = "floor") -> void:
 	# local y=0, so a shared aim point (with x/z always 0, since the pivot
 	# already centers every model horizontally) keeps every export's floor
 	# line on the same canvas row, matching the fridge calibration render.
-	var target := Vector3(0.0, CAMERA_TARGET_Y, 0.0)
+	# Wall pivot has no such shared anchor to preserve -- compute_pivot_offset's
+	# "wall" mode already moves the model's own AABB *center* to world origin,
+	# so aiming at the fixed floor-calibrated CAMERA_TARGET_Y would look ~1.65m
+	# above a wall-mounted model and crop it low in frame. Aim at the origin
+	# instead, i.e. exactly where wall pivot already put the model's center.
+	var target := Vector3.ZERO if pivot_mode == "wall" else Vector3(0.0, CAMERA_TARGET_Y, 0.0)
 	camera.position = target + camera.transform.basis.z.normalized() * CAMERA_DISTANCE
 
 func _folder_for(typed_name: String) -> String:
