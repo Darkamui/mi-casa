@@ -6,3 +6,12 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+*.iml
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
