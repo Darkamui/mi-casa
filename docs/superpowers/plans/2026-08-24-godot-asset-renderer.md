@@ -813,6 +813,45 @@ shipped with the Flutter app — see
    orientation of the same model, re-instance it, rotate it, and export
    again under the `_045`/`_090` suffix.
 
+## Kitchen asset checklist
+
+| Export name | Output path |
+|---|---|
+| `fridge_000` | `content/art/rendered/props/fridge/fridge_000.png` |
+| `stove_000` | `content/art/rendered/props/stove/stove_000.png` |
+| `mug_000` | `content/art/rendered/props/mug/mug_000.png` |
+| `sink_000` | `content/art/rendered/props/sink/sink_000.png` |
+| `cabinet_000` | `content/art/rendered/props/cabinet/cabinet_000.png` |
+| `cabinet_045` | `content/art/rendered/props/cabinet/cabinet_045.png` |
+| `island_000` | `content/art/rendered/props/island/island_000.png` |
+| `stool_000` | `content/art/rendered/props/stool/stool_000.png` |
+| `shelf_000` | `content/art/rendered/props/shelf/shelf_000.png` |
+| `rug_000` | `content/art/rendered/props/rug/rug_000.png` |
+| `plant_01_000` | `content/art/rendered/props/plant_01/plant_01_000.png` |
+| `plant_02_000` | `content/art/rendered/props/plant_02/plant_02_000.png` |
+| `jar_000` | `content/art/rendered/props/jar/jar_000.png` |
+| `kettle_000` | `content/art/rendered/props/kettle/kettle_000.png` |
+| `picture_000` | `content/art/rendered/props/picture/picture_000.png` (wall pivot — see below) |
+| `dish_stack_small_000` | `content/art/rendered/props/dish_stack_small/dish_stack_small_000.png` |
+| `dish_stack_large_000` | `content/art/rendered/props/dish_stack_large/dish_stack_large_000.png` |
+| `pan_000` | `content/art/rendered/props/pan/pan_000.png` |
+| `crumbs_000` | `content/art/rendered/props/crumbs/crumbs_000.png` |
+| `garbage_bag_000` | `content/art/rendered/props/garbage_bag/garbage_bag_000.png` |
+| `wall_000` | `content/art/rendered/props/wall/wall_000.png` |
+| `floor_000` | `content/art/rendered/props/floor/floor_000.png` |
+| `window_000` | `content/art/rendered/props/window/window_000.png` (wall pivot — see below) |
+| `curtain_000` | `content/art/rendered/props/curtain/curtain_000.png` (wall pivot — see below) |
+
+Note: the spec's own checklist (design doc §4) groups `plant_01`/`plant_02`
+and the two `dish_stack` sizes under folder names that already include
+the descriptor (`dish_stack/dish_stack_small_000.png`); the table above
+instead follows `_folder_for()`'s literal stripping rule (Task 4), which
+produces `dish_stack_small/` and `plant_01/` as separate folders. Either
+is a valid interface for Spec B as long as it's applied consistently —
+prefer the table above since it's what the shipped tool actually
+produces; update this table (not the code) if the folder grouping should
+instead match the spec's illustrative paths exactly.
+
 ## Wall-mounted assets
 
 `picture`, `window`, and `curtain` pivot from vertical-center, not
@@ -906,42 +945,13 @@ real assets using the validated tool from Task 6.
 
 - [ ] **Step 1: Render every remaining item on the kitchen checklist**
 
-Following the README workflow, render each of the following (fridge,
-stove, and mug are already done in Task 6):
-
-| Export name | Output path |
-|---|---|
-| `sink_000` | `content/art/rendered/props/sink/sink_000.png` |
-| `cabinet_000` | `content/art/rendered/props/cabinet/cabinet_000.png` |
-| `cabinet_045` | `content/art/rendered/props/cabinet/cabinet_045.png` |
-| `island_000` | `content/art/rendered/props/island/island_000.png` |
-| `stool_000` | `content/art/rendered/props/stool/stool_000.png` |
-| `shelf_000` | `content/art/rendered/props/shelf/shelf_000.png` |
-| `rug_000` | `content/art/rendered/props/rug/rug_000.png` |
-| `plant_01_000` | `content/art/rendered/props/plant_01/plant_01_000.png` |
-| `plant_02_000` | `content/art/rendered/props/plant_02/plant_02_000.png` |
-| `jar_000` | `content/art/rendered/props/jar/jar_000.png` |
-| `kettle_000` | `content/art/rendered/props/kettle/kettle_000.png` |
-| `picture_000` | `content/art/rendered/props/picture/picture_000.png` (wall pivot — see README) |
-| `dish_stack_small_000` | `content/art/rendered/props/dish_stack_small/dish_stack_small_000.png` |
-| `dish_stack_large_000` | `content/art/rendered/props/dish_stack_large/dish_stack_large_000.png` |
-| `pan_000` | `content/art/rendered/props/pan/pan_000.png` |
-| `crumbs_000` | `content/art/rendered/props/crumbs/crumbs_000.png` |
-| `garbage_bag_000` | `content/art/rendered/props/garbage_bag/garbage_bag_000.png` |
-| `wall_000` | `content/art/rendered/props/wall/wall_000.png` |
-| `floor_000` | `content/art/rendered/props/floor/floor_000.png` |
-| `window_000` | `content/art/rendered/props/window/window_000.png` (wall pivot — see README) |
-| `curtain_000` | `content/art/rendered/props/curtain/curtain_000.png` (wall pivot — see README) |
-
-Note: the spec's own checklist (design doc §4) groups `plant_01`/`plant_02`
-and the two `dish_stack` sizes under folder names that already include
-the descriptor (`dish_stack/dish_stack_small_000.png`); the table above
-instead follows `_folder_for()`'s literal stripping rule (Task 4), which
-produces `dish_stack_small/` and `plant_01/` as separate folders. Either
-is a valid interface for Spec B as long as it's applied consistently —
-prefer the table above since it's what the shipped tool actually
-produces; update this table (not the code) if the folder grouping should
-instead match the spec's illustrative paths exactly.
+Following the README workflow, render every row of the "Kitchen asset
+checklist" table in `tools/asset_renderer/README.md` (Task 5) that isn't
+already done — `fridge_000`, `stove_000`, and `mug_000` are already
+rendered and committed in Task 6; render the remaining 21 rows. The
+README table already carries the wall-pivot callouts and the
+folder-naming caveat versus the spec's illustrative paths — follow it
+exactly rather than re-deriving names here.
 
 - [ ] **Step 2: Spot-check against Task 6's criteria**
 
