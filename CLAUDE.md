@@ -49,9 +49,10 @@ multiple homes) until Phase 0 passes its kill criteria (spec §5.5).
 
 ## Stack
 
-Flutter + Rive + Riverpod + Drift/SQLite. No Flame unless a spike proves
-plain Flutter + `CustomPainter` insufficient (spec §5.3). Local-first,
-no backend, no login, no sync in Phase 0.
+Flutter + Rive + Riverpod + Drift/SQLite + Flame. Flame is the settled
+rendering engine for room presentation (`lib/presentation/flame/`) — see
+`docs/superpowers/specs/2026-08-24-flame-kitchen-runtime-design.md`.
+Local-first, no backend, no login, no sync in Phase 0.
 
 Note: `sqlite3_flutter_libs` is intentionally **not** a dependency — it's
 EOL. Drift 2.32+ bundles SQLite automatically; use `NativeDatabase`

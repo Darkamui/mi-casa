@@ -40,6 +40,7 @@ dependencies:
   drift: ^2.34.3
   path_provider: ^2.1.6
   path: ^1.9.1
+  flame: ^1.38.0
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +54,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.34.5
   build_runner: ^2.16.0
+  flame_test: ^2.3.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -73,6 +75,19 @@ flutter:
     - content/rooms/room_types.json
     - content/tasks/tasks.json
     - content/adjacency/edges.json
+    - content/clutter/kitchen_clutter_states.json
+    - content/art/rendered/props/fridge/
+    - content/art/rendered/props/stove/
+    - content/art/rendered/props/sink/
+    - content/art/rendered/props/cabinet/
+    - content/art/rendered/props/stool/
+    - content/art/rendered/props/shelf/
+    - content/art/rendered/props/rug/
+    - content/art/rendered/props/plant_01/
+    - content/art/rendered/props/plant_02/
+    - content/art/rendered/props/garbage_bag/
+    - content/art/rendered/props/window/
+    - content/art/rendered/props/curtain/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
