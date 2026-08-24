@@ -35,6 +35,10 @@ class _CompanionWidgetState extends State<CompanionWidget>
 
   @override
   Widget build(BuildContext context) {
+    final asset = widget.mood == CompanionMood.celebrating
+        ? 'content/art/companion/companion_excited.png'
+        : 'content/art/companion/companion_idle.png';
+
     return GestureDetector(
       key: const ValueKey('companionTap'),
       onTap: widget.onTap,
@@ -46,45 +50,8 @@ class _CompanionWidgetState extends State<CompanionWidget>
               : math.sin(_bounceController.value * math.pi) * 6;
           return Transform.translate(offset: Offset(0, -bounce), child: child);
         },
-        child: CustomPaint(
-          size: const Size(64, 64),
-          painter:
-              CompanionPainter(celebrating: widget.mood == CompanionMood.celebrating),
-        ),
+        child: Image.asset(asset, width: 96, height: 112),
       ),
     );
   }
-}
-
-class CompanionPainter extends CustomPainter {
-  final bool celebrating;
-  const CompanionPainter({required this.celebrating});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bodyPaint = Paint()..color = const Color(0xFFE8A33D);
-    final center = Offset(size.width / 2, size.height / 2);
-    canvas.drawCircle(center, size.shortestSide / 2, bodyPaint);
-
-    final eyePaint = Paint()..color = Colors.black;
-    final eyeOffset = size.shortestSide * 0.15;
-    final eyeRadius = celebrating ? size.shortestSide * 0.05 : size.shortestSide * 0.04;
-    canvas.drawCircle(center + Offset(-eyeOffset, -eyeOffset * 0.3), eyeRadius, eyePaint);
-    canvas.drawCircle(center + Offset(eyeOffset, -eyeOffset * 0.3), eyeRadius, eyePaint);
-
-    if (celebrating) {
-      final armPaint = Paint()
-        ..color = const Color(0xFFE8A33D)
-        ..strokeWidth = 4
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(center + Offset(-eyeOffset * 2, 0),
-          center + Offset(-eyeOffset * 3, -eyeOffset * 2), armPaint);
-      canvas.drawLine(center + Offset(eyeOffset * 2, 0),
-          center + Offset(eyeOffset * 3, -eyeOffset * 2), armPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CompanionPainter oldDelegate) =>
-      oldDelegate.celebrating != celebrating;
 }

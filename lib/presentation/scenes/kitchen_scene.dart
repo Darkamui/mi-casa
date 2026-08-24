@@ -6,8 +6,8 @@ import '../effects/particle_burst.dart';
 import '../widgets/companion_widget.dart';
 import '../widgets/quest_card.dart';
 import '../widgets/single_task_prompt.dart';
-import 'dish_pile_painter.dart';
-import 'kitchen_background_painter.dart';
+import 'dish_pile.dart';
+import 'kitchen_background.dart';
 import 'kitchen_scene_controller.dart';
 
 class KitchenScene extends ConsumerWidget {
@@ -31,10 +31,9 @@ class KitchenScene extends ConsumerWidget {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: CustomPaint(painter: KitchenBackgroundPainter(restored: restored)),
-          ),
-          Center(
+          const Positioned.fill(child: KitchenBackground()),
+          Align(
+            alignment: const Alignment(0.05, -0.1),
             child: AnimatedOpacity(
               opacity: restored ? 0.0 : 1.0,
               duration: const Duration(milliseconds: 500),
@@ -42,9 +41,9 @@ class KitchenScene extends ConsumerWidget {
                 scale: restored ? 0.6 : 1.0,
                 duration: const Duration(milliseconds: 500),
                 child: const SizedBox(
-                  width: 120,
-                  height: 80,
-                  child: CustomPaint(painter: DishPilePainter()),
+                  width: 140,
+                  height: 100,
+                  child: DishPile(),
                 ),
               ),
             ),
