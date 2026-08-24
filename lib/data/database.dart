@@ -9,16 +9,18 @@ import 'daos/chore_completions_dao.dart';
 import 'daos/chores_dao.dart';
 import 'daos/entropy_state_dao.dart';
 import 'daos/rooms_dao.dart';
+import 'daos/runs_dao.dart';
 import 'tables/chore_completions_table.dart';
 import 'tables/chores_table.dart';
 import 'tables/entropy_state_table.dart';
 import 'tables/rooms_table.dart';
+import 'tables/runs_table.dart';
 
 part 'database.g.dart';
 
 @DriftDatabase(
-  tables: [Rooms, Chores, ChoreCompletions, EntropyStates],
-  daos: [RoomsDao, ChoresDao, ChoreCompletionsDao, EntropyStateDao],
+  tables: [Rooms, Chores, ChoreCompletions, EntropyStates, Runs],
+  daos: [RoomsDao, ChoresDao, ChoreCompletionsDao, EntropyStateDao, RunsDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);

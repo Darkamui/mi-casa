@@ -1364,6 +1364,381 @@ class EntropyStatesCompanion extends UpdateCompanion<EntropyState> {
   }
 }
 
+class $RunsTable extends Runs with TableInfo<$RunsTable, Run> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RunsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<EnergyLevel, String> energyLevel =
+      GeneratedColumn<String>(
+        'energy_level',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<EnergyLevel>($RunsTable.$converterenergyLevel);
+  static const VerificationMeta _momentumChainLengthMeta =
+      const VerificationMeta('momentumChainLength');
+  @override
+  late final GeneratedColumn<int> momentumChainLength = GeneratedColumn<int>(
+    'momentum_chain_length',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    startedAt,
+    endedAt,
+    energyLevel,
+    momentumChainLength,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'runs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Run> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    }
+    if (data.containsKey('momentum_chain_length')) {
+      context.handle(
+        _momentumChainLengthMeta,
+        momentumChainLength.isAcceptableOrUnknown(
+          data['momentum_chain_length']!,
+          _momentumChainLengthMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Run map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Run(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      ),
+      energyLevel: $RunsTable.$converterenergyLevel.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}energy_level'],
+        )!,
+      ),
+      momentumChainLength: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}momentum_chain_length'],
+      )!,
+    );
+  }
+
+  @override
+  $RunsTable createAlias(String alias) {
+    return $RunsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<EnergyLevel, String, String> $converterenergyLevel =
+      const EnumNameConverter<EnergyLevel>(EnergyLevel.values);
+}
+
+class Run extends DataClass implements Insertable<Run> {
+  final String id;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+  final EnergyLevel energyLevel;
+  final int momentumChainLength;
+  const Run({
+    required this.id,
+    required this.startedAt,
+    this.endedAt,
+    required this.energyLevel,
+    required this.momentumChainLength,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    if (!nullToAbsent || endedAt != null) {
+      map['ended_at'] = Variable<DateTime>(endedAt);
+    }
+    {
+      map['energy_level'] = Variable<String>(
+        $RunsTable.$converterenergyLevel.toSql(energyLevel),
+      );
+    }
+    map['momentum_chain_length'] = Variable<int>(momentumChainLength);
+    return map;
+  }
+
+  RunsCompanion toCompanion(bool nullToAbsent) {
+    return RunsCompanion(
+      id: Value(id),
+      startedAt: Value(startedAt),
+      endedAt: endedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAt),
+      energyLevel: Value(energyLevel),
+      momentumChainLength: Value(momentumChainLength),
+    );
+  }
+
+  factory Run.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Run(
+      id: serializer.fromJson<String>(json['id']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime?>(json['endedAt']),
+      energyLevel: $RunsTable.$converterenergyLevel.fromJson(
+        serializer.fromJson<String>(json['energyLevel']),
+      ),
+      momentumChainLength: serializer.fromJson<int>(
+        json['momentumChainLength'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime?>(endedAt),
+      'energyLevel': serializer.toJson<String>(
+        $RunsTable.$converterenergyLevel.toJson(energyLevel),
+      ),
+      'momentumChainLength': serializer.toJson<int>(momentumChainLength),
+    };
+  }
+
+  Run copyWith({
+    String? id,
+    DateTime? startedAt,
+    Value<DateTime?> endedAt = const Value.absent(),
+    EnergyLevel? energyLevel,
+    int? momentumChainLength,
+  }) => Run(
+    id: id ?? this.id,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt.present ? endedAt.value : this.endedAt,
+    energyLevel: energyLevel ?? this.energyLevel,
+    momentumChainLength: momentumChainLength ?? this.momentumChainLength,
+  );
+  Run copyWithCompanion(RunsCompanion data) {
+    return Run(
+      id: data.id.present ? data.id.value : this.id,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      energyLevel: data.energyLevel.present
+          ? data.energyLevel.value
+          : this.energyLevel,
+      momentumChainLength: data.momentumChainLength.present
+          ? data.momentumChainLength.value
+          : this.momentumChainLength,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Run(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('momentumChainLength: $momentumChainLength')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, startedAt, endedAt, energyLevel, momentumChainLength);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Run &&
+          other.id == this.id &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.energyLevel == this.energyLevel &&
+          other.momentumChainLength == this.momentumChainLength);
+}
+
+class RunsCompanion extends UpdateCompanion<Run> {
+  final Value<String> id;
+  final Value<DateTime> startedAt;
+  final Value<DateTime?> endedAt;
+  final Value<EnergyLevel> energyLevel;
+  final Value<int> momentumChainLength;
+  final Value<int> rowid;
+  const RunsCompanion({
+    this.id = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.energyLevel = const Value.absent(),
+    this.momentumChainLength = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RunsCompanion.insert({
+    required String id,
+    required DateTime startedAt,
+    this.endedAt = const Value.absent(),
+    required EnergyLevel energyLevel,
+    this.momentumChainLength = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       startedAt = Value(startedAt),
+       energyLevel = Value(energyLevel);
+  static Insertable<Run> custom({
+    Expression<String>? id,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<String>? energyLevel,
+    Expression<int>? momentumChainLength,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (energyLevel != null) 'energy_level': energyLevel,
+      if (momentumChainLength != null)
+        'momentum_chain_length': momentumChainLength,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RunsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? startedAt,
+    Value<DateTime?>? endedAt,
+    Value<EnergyLevel>? energyLevel,
+    Value<int>? momentumChainLength,
+    Value<int>? rowid,
+  }) {
+    return RunsCompanion(
+      id: id ?? this.id,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      energyLevel: energyLevel ?? this.energyLevel,
+      momentumChainLength: momentumChainLength ?? this.momentumChainLength,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (energyLevel.present) {
+      map['energy_level'] = Variable<String>(
+        $RunsTable.$converterenergyLevel.toSql(energyLevel.value),
+      );
+    }
+    if (momentumChainLength.present) {
+      map['momentum_chain_length'] = Variable<int>(momentumChainLength.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RunsCompanion(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('momentumChainLength: $momentumChainLength, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1373,6 +1748,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $EntropyStatesTable entropyStates = $EntropyStatesTable(this);
+  late final $RunsTable runs = $RunsTable(this);
   late final RoomsDao roomsDao = RoomsDao(this as AppDatabase);
   late final ChoresDao choresDao = ChoresDao(this as AppDatabase);
   late final ChoreCompletionsDao choreCompletionsDao = ChoreCompletionsDao(
@@ -1381,6 +1757,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final EntropyStateDao entropyStateDao = EntropyStateDao(
     this as AppDatabase,
   );
+  late final RunsDao runsDao = RunsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1390,6 +1767,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     chores,
     choreCompletions,
     entropyStates,
+    runs,
   ];
 }
 
@@ -2787,6 +3165,202 @@ typedef $$EntropyStatesTableProcessedTableManager =
       EntropyState,
       PrefetchHooks Function({bool choreId})
     >;
+typedef $$RunsTableCreateCompanionBuilder = RunsCompanion Function({
+  required String id,
+  required DateTime startedAt,
+  Value<DateTime?> endedAt,
+  required EnergyLevel energyLevel,
+  Value<int> momentumChainLength,
+  Value<int> rowid,
+});
+typedef $$RunsTableUpdateCompanionBuilder = RunsCompanion Function({
+  Value<String> id,
+  Value<DateTime> startedAt,
+  Value<DateTime?> endedAt,
+  Value<EnergyLevel> energyLevel,
+  Value<int> momentumChainLength,
+  Value<int> rowid,
+});
+
+class $$RunsTableFilterComposer extends Composer<_$AppDatabase, $RunsTable> {
+  $$RunsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<EnergyLevel, EnergyLevel, String>
+  get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get momentumChainLength => $composableBuilder(
+    column: $table.momentumChainLength,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RunsTableOrderingComposer extends Composer<_$AppDatabase, $RunsTable> {
+  $$RunsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get momentumChainLength => $composableBuilder(
+    column: $table.momentumChainLength,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RunsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RunsTable> {
+  $$RunsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<EnergyLevel, String> get energyLevel =>
+      $composableBuilder(
+        column: $table.energyLevel,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<int> get momentumChainLength => $composableBuilder(
+    column: $table.momentumChainLength,
+    builder: (column) => column,
+  );
+}
+
+class $$RunsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RunsTable,
+          Run,
+          $$RunsTableFilterComposer,
+          $$RunsTableOrderingComposer,
+          $$RunsTableAnnotationComposer,
+          $$RunsTableCreateCompanionBuilder,
+          $$RunsTableUpdateCompanionBuilder,
+          (Run, BaseReferences<_$AppDatabase, $RunsTable, Run>),
+          Run,
+          PrefetchHooks Function()
+        > {
+  $$RunsTableTableManager(_$AppDatabase db, $RunsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RunsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RunsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RunsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<EnergyLevel> energyLevel = const Value.absent(),
+                Value<int> momentumChainLength = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RunsCompanion(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                energyLevel: energyLevel,
+                momentumChainLength: momentumChainLength,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime startedAt,
+                Value<DateTime?> endedAt = const Value.absent(),
+                required EnergyLevel energyLevel,
+                Value<int> momentumChainLength = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RunsCompanion.insert(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                energyLevel: energyLevel,
+                momentumChainLength: momentumChainLength,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RunsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RunsTable,
+      Run,
+      $$RunsTableFilterComposer,
+      $$RunsTableOrderingComposer,
+      $$RunsTableAnnotationComposer,
+      $$RunsTableCreateCompanionBuilder,
+      $$RunsTableUpdateCompanionBuilder,
+      (Run, BaseReferences<_$AppDatabase, $RunsTable, Run>),
+      Run,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2799,4 +3373,5 @@ class $AppDatabaseManager {
       $$ChoreCompletionsTableTableManager(_db, _db.choreCompletions);
   $$EntropyStatesTableTableManager get entropyStates =>
       $$EntropyStatesTableTableManager(_db, _db.entropyStates);
+  $$RunsTableTableManager get runs => $$RunsTableTableManager(_db, _db.runs);
 }
