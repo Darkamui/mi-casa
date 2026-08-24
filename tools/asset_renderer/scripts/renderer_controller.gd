@@ -18,6 +18,15 @@ const CAMERA_PADDING_FACTOR := 1.15
 # doesn't fit with this padding -- same "tuned visually, then hard-locked"
 # allowance as the other camera constants.
 const CAMERA_ORTHO_SIZE := 4.311
+# Fixed for the same reason as CAMERA_ORTHO_SIZE: floor-pivoted models
+# always have their AABB bottom at local y=0, so aiming every model's
+# camera at this one fixed world Y (instead of that model's own AABB
+# center) makes every export's floor line land on the same canvas row --
+# "each asset's floor-contact point sits at the same canvas anchor"
+# (spec/Task 6 criterion). Calibrated as the fridge's own aligned AABB
+# vertical center (size.y / 2 == 3.308443 / 2), so the calibration
+# reference itself still renders centered with even top/bottom padding.
+const CAMERA_TARGET_Y := 1.6542215
 
 @onready var render_viewport: SubViewport = %RenderViewport
 @onready var world_environment: WorldEnvironment = %WorldEnvironment
@@ -107,15 +116,15 @@ func align_current_model(pivot_mode: String = "floor") -> void:
 	var aabb := compute_model_aabb(model_root)
 	var offset := RendererMath.compute_pivot_offset(aabb, pivot_mode)
 	model_root.position = offset
-	var aligned_aabb := AABB(aabb.position + offset, aabb.size)
 	# camera.size is intentionally NOT recomputed here -- it stays at the
 	# fixed CAMERA_ORTHO_SIZE set in _configure_camera() so relative
 	# real-world scale is preserved across different assets' exports.
-	# _configure_camera() aims the camera at the world origin, which is the
-	# floor-pivot's contact point (y=0), not the model's vertical center --
-	# without retargeting here, the floor line sits at screen-center and the
-	# top of taller models rides past the frustum's upper edge.
-	var target := aligned_aabb.position + aligned_aabb.size * 0.5
+	# The camera aim point is the fixed CAMERA_TARGET_Y, not this model's
+	# own AABB center -- every floor-pivoted model's AABB bottom is at
+	# local y=0, so a shared aim point (with x/z always 0, since the pivot
+	# already centers every model horizontally) keeps every export's floor
+	# line on the same canvas row, matching the fridge calibration render.
+	var target := Vector3(0.0, CAMERA_TARGET_Y, 0.0)
 	camera.position = target + camera.transform.basis.z.normalized() * CAMERA_DISTANCE
 
 func _folder_for(typed_name: String) -> String:
