@@ -8,6 +8,16 @@ const CAMERA_DISTANCE := 10.0
 const CAMERA_NEAR := 0.05
 const CAMERA_FAR := 100.0
 const CAMERA_PADDING_FACTOR := 1.15
+# Fixed, not recomputed per model -- the README promises scale is "locked
+# identically across every asset", so every export must share one zoom
+# level or real-world size differences (fridge vs. stove vs. mug) vanish.
+# Calibrated against Kitchen_Fridge.fbx, the tallest of the initial
+# reference trio: compute_orthogonal_camera_size(fridge_aligned_aabb,
+# camera_basis, aspect=1.0, CAMERA_PADDING_FACTOR) == 4.311. Re-tune (and
+# re-render the reference trio) if a later asset (e.g. island, cabinet)
+# doesn't fit with this padding -- same "tuned visually, then hard-locked"
+# allowance as the other camera constants.
+const CAMERA_ORTHO_SIZE := 4.311
 
 @onready var render_viewport: SubViewport = %RenderViewport
 @onready var world_environment: WorldEnvironment = %WorldEnvironment
@@ -72,7 +82,7 @@ func _configure_light() -> void:
 func _configure_camera() -> void:
 	camera.rotation_degrees = Vector3(CAMERA_PITCH_DEG, CAMERA_YAW_DEG, 0.0)
 	camera.position = camera.transform.basis.z.normalized() * CAMERA_DISTANCE
-	camera.set_orthogonal(2.0, CAMERA_NEAR, CAMERA_FAR)
+	camera.set_orthogonal(CAMERA_ORTHO_SIZE, CAMERA_NEAR, CAMERA_FAR)
 
 static func collect_visual_instances(node: Node) -> Array[VisualInstance3D]:
 	var result: Array[VisualInstance3D] = []
@@ -98,10 +108,9 @@ func align_current_model(pivot_mode: String = "floor") -> void:
 	var offset := RendererMath.compute_pivot_offset(aabb, pivot_mode)
 	model_root.position = offset
 	var aligned_aabb := AABB(aabb.position + offset, aabb.size)
-	var aspect := float(render_viewport.size.x) / float(render_viewport.size.y)
-	camera.size = RendererMath.compute_orthogonal_camera_size(
-		aligned_aabb, camera.global_transform.basis, aspect, CAMERA_PADDING_FACTOR
-	)
+	# camera.size is intentionally NOT recomputed here -- it stays at the
+	# fixed CAMERA_ORTHO_SIZE set in _configure_camera() so relative
+	# real-world scale is preserved across different assets' exports.
 	# _configure_camera() aims the camera at the world origin, which is the
 	# floor-pivot's contact point (y=0), not the model's vertical center --
 	# without retargeting here, the floor line sits at screen-center and the
