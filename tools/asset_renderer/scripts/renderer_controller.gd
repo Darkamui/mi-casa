@@ -64,6 +64,14 @@ func _on_model_root_child_entered(_node: Node) -> void:
 	# Auto-fit runs the moment a model is placed (spec §6, step 1) so the
 	# human's "confirm framing looks correct" workflow step has something
 	# to look at before they ever touch the export field.
+	#
+	# child_entered_tree fires from Node's own _propagate_enter_tree, before
+	# it recurses into the new child's descendants -- so the model's nested
+	# MeshInstance3D nodes are not yet is_inside_tree() at this point, and
+	# compute_model_aabb (which reads global_transform, hard-guarded on
+	# is_inside_tree()) would compute a wrong AABB. Deferring one frame lets
+	# the whole subtree finish entering first.
+	await get_tree().process_frame
 	align_current_model(_current_pivot_mode())
 
 func _on_framing_option_toggled(_pressed: bool) -> void:

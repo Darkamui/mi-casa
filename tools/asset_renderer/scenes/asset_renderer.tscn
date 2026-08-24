@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://2taw7p0b5if4"]
 
 [ext_resource type="Script" uid="uid://bmkrhnh3uksg8" path="res://scripts/renderer_controller.gd" id="1_script"]
-[ext_resource type="PackedScene" uid="uid://c6f3ug36fbpxl" path="res://models/Carpet_1.fbx" id="2_ighs2"]
 
 [node name="AssetRenderer" type="Node3D" unique_id=212926578]
 script = ExtResource("1_script")
@@ -22,8 +21,6 @@ current = true
 
 [node name="ModelRoot" type="Node3D" parent="RenderViewport" unique_id=1697820014]
 unique_name_in_owner = true
-
-[node name="Carpet_1" parent="RenderViewport/ModelRoot" unique_id=204654073 instance=ExtResource("2_ighs2")]
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1860184419]
 

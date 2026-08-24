@@ -2,8 +2,10 @@
 
 A Godot 4 dev-time tool. Turns one Quaternius FBX model into one
 transparent-background PNG sprite at a time, with camera angle,
-lighting, scale, and pivot locked identically across every asset. Not
-shipped with the Flutter app — see
+lighting, scale, and pivot locked identically across every asset —
+except where a per-asset framing checkbox is explicitly checked; see
+**Wall-mounted assets** and **Floor coverings** below. Not shipped with
+the Flutter app — see
 `docs/superpowers/specs/2026-08-24-godot-asset-renderer-design.md`.
 
 ## Workflow
@@ -69,7 +71,7 @@ prefer the table above since it's what the shipped tool actually
 produces; update this table (not the code) if the folder grouping should
 instead match the spec's illustrative paths exactly.
 
-10 rows above (`mug`, `island`, `jar`, `kettle`, `picture`,
+11 rows above (`mug`, `island`, `jar`, `kettle`, `picture`,
 `dish_stack_small`, `dish_stack_large`, `pan`, `crumbs`, `wall`, `floor`)
 have no matching model anywhere in `content/art/Ultimate House Interior
 Pack - June 2020/FBX/` — they need a substitute or hand-authored source
@@ -86,6 +88,19 @@ field before placing (or immediately after placing) the model under
 model's own center instead of the default floor-contact pivot and fixed
 floor-height aim point. Uncheck it before placing the next (non-wall)
 asset.
+
+## Floor coverings
+
+`rug` (and any similarly flat, wide asset like a carpet) needs the
+**Floor covering (rug/carpet)** checkbox. A rug's own vertical extent
+sits almost entirely below the fixed floor-pivot camera aim point
+(calibrated to the fridge's much taller center), so the shared framing
+clips it. This checkbox fits the camera to that one model's own AABB
+instead of the shared calibration — **this is a real exception to the
+"scale locked identically across every asset" claim above**: a
+floor-covering export is not scale-comparable to a normal furniture
+export, only to other floor-covering exports. Uncheck it before placing
+the next (non-floor-covering) asset.
 
 ## Optional: shadow-disabled variant
 
