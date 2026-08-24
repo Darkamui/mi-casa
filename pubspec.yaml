@@ -70,6 +70,9 @@ flutter:
     - content/art/companion/companion_idle.png
     - content/art/companion/companion_excited.png
     - content/art/props/dish_pile.png
+    - content/rooms/room_types.json
+    - content/tasks/tasks.json
+    - content/adjacency/edges.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

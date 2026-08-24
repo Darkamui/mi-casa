@@ -1,0 +1,13 @@
+[
+  {
+    "id": "kitchen",
+    "name": "Kitchen",
+    "taskIds": [
+      "kitchen.dishes",
+      "kitchen.clear_counter",
+      "kitchen.wipe_counter",
+      "kitchen.garbage",
+      "kitchen.new_bag"
+    ]
+  }
+]
