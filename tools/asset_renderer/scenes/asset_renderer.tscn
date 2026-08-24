@@ -1,6 +1,9 @@
-[gd_scene load_steps=1 format=3]
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/renderer_controller.gd" id="1_script"]
 
 [node name="AssetRenderer" type="Node3D"]
+script = ExtResource("1_script")
 
 [node name="RenderViewport" type="SubViewport" parent="."]
 unique_name_in_owner = true
