@@ -1,0 +1,37 @@
+[
+  {
+    "id": "kitchen.dishes",
+    "roomTypeId": "kitchen",
+    "label": "Put the dishes away",
+    "baseDurationMinutes": 2.0,
+    "defaultRisePerHour": 0.005952
+  },
+  {
+    "id": "kitchen.clear_counter",
+    "roomTypeId": "kitchen",
+    "label": "Clear the counter",
+    "baseDurationMinutes": 2.0,
+    "defaultRisePerHour": 0.020833
+  },
+  {
+    "id": "kitchen.wipe_counter",
+    "roomTypeId": "kitchen",
+    "label": "Wipe the counter",
+    "baseDurationMinutes": 2.0,
+    "defaultRisePerHour": 0.041667
+  },
+  {
+    "id": "kitchen.garbage",
+    "roomTypeId": "kitchen",
+    "label": "Take out the garbage",
+    "baseDurationMinutes": 3.0,
+    "defaultRisePerHour": 0.013889
+  },
+  {
+    "id": "kitchen.new_bag",
+    "roomTypeId": "kitchen",
+    "label": "Put in a new bag",
+    "baseDurationMinutes": 1.0,
+    "defaultRisePerHour": 0.013889
+  }
+]
