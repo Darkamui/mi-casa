@@ -5,14 +5,16 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'daos/chores_dao.dart';
 import 'daos/rooms_dao.dart';
+import 'tables/chores_table.dart';
 import 'tables/rooms_table.dart';
 
 part 'database.g.dart';
 
 @DriftDatabase(
-  tables: [Rooms],
-  daos: [RoomsDao],
+  tables: [Rooms, Chores],
+  daos: [RoomsDao, ChoresDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
