@@ -1,0 +1,26 @@
+[
+  {
+    "fromTaskId": "kitchen.dishes",
+    "toTaskId": "kitchen.clear_counter",
+    "prompt": "Clear the counter?",
+    "estimatedMinutes": 2.0
+  },
+  {
+    "fromTaskId": "kitchen.clear_counter",
+    "toTaskId": "kitchen.wipe_counter",
+    "prompt": "Wipe it?",
+    "estimatedMinutes": 2.0
+  },
+  {
+    "fromTaskId": "kitchen.wipe_counter",
+    "toTaskId": "kitchen.garbage",
+    "prompt": "Take out the garbage?",
+    "estimatedMinutes": 3.0
+  },
+  {
+    "fromTaskId": "kitchen.garbage",
+    "toTaskId": "kitchen.new_bag",
+    "prompt": "Put in a new bag?",
+    "estimatedMinutes": 1.0
+  }
+]
