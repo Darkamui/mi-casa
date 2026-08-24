@@ -62,9 +62,26 @@ EOL. Drift 2.32+ bundles SQLite automatically; use `NativeDatabase`
 - Flutter SDK lives at `C:\flutter` (installed via `git clone -b stable`,
   not the installer). Run `flutter doctor` if commands behave
   unexpectedly.
-- Android SDK and Chrome are not installed on this machine — Android and
-  web build/run targets are unavailable until those are set up. Windows
-  desktop (Visual Studio + C++ workload) is available.
-- Windows Developer Mode may not be enabled, which blocks the plugin
-  symlink step required for `flutter build windows` / `flutter run -d
-  windows`. `flutter analyze` and `flutter test` work regardless.
+- Windows desktop and Android builds both work end to end (`flutter
+  build windows --debug`, `flutter build apk --debug` have been
+  verified). Web is unset up and out of scope — Chrome isn't installed
+  and the project doesn't target web; ignore `flutter doctor`'s Chrome
+  warning.
+- Android SDK is at `%LOCALAPPDATA%\Android\sdk`, installed via
+  Android Studio + manually added cmdline-tools (`sdkmanager` needs
+  `JAVA_HOME` pointed at Android Studio's bundled JBR, e.g.
+  `C:\Program Files\Android\Android Studio\jbr`, since no standalone JDK
+  is installed). `flutter doctor` reports "Some Android licenses not
+  accepted" — this is about unused legacy addon licenses (preview,
+  ARM DBT, Google GDK/TV, Intel/MIPS system images), not the ones that
+  matter; `android-sdk-license` is accepted and real builds succeed.
+  `flutter doctor --android-licenses` and `sdkmanager --licenses` can't
+  be driven interactively in this environment (piped stdin doesn't
+  reach the prompt) — if it's ever needed, run it in an actual
+  interactive terminal.
+- `rive_native` applies its own Kotlin Gradle Plugin (KGP) directly,
+  which the `flutter build apk` output flags as deprecated — a future
+  Flutter version may refuse to build until upstream `rive_native`
+  migrates to Built-in Kotlin. Not an issue today; worth checking for
+  a `rive`/`rive_native` upgrade if Android builds ever start failing
+  with a KGP-related error.
