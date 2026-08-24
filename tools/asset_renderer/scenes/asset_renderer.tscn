@@ -1,0 +1,39 @@
+[gd_scene load_steps=1 format=3]
+
+[node name="AssetRenderer" type="Node3D"]
+
+[node name="RenderViewport" type="SubViewport" parent="."]
+unique_name_in_owner = true
+size = Vector2i(1024, 1024)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="RenderViewport"]
+unique_name_in_owner = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="RenderViewport"]
+unique_name_in_owner = true
+
+[node name="Camera3D" type="Camera3D" parent="RenderViewport"]
+unique_name_in_owner = true
+current = true
+
+[node name="ModelRoot" type="Node3D" parent="RenderViewport"]
+unique_name_in_owner = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="ExportPanel" type="PanelContainer" parent="UI"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 340.0
+offset_bottom = 56.0
+
+[node name="ExportRow" type="HBoxContainer" parent="UI/ExportPanel"]
+
+[node name="ExportNameField" type="LineEdit" parent="UI/ExportPanel/ExportRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+placeholder_text = "export name, e.g. fridge_000"
+
+[node name="ExportButton" type="Button" parent="UI/ExportPanel/ExportRow"]
+unique_name_in_owner = true
+text = "Export PNG"

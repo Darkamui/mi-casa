@@ -4,7 +4,7 @@ config_version=5
 [application]
 
 config/name="AssetRenderer"
-run/main_scene="res://scenes/empty.tscn"
+run/main_scene="res://scenes/asset_renderer.tscn"
 config/features=PackedStringArray("4.7")
 
 [rendering]
