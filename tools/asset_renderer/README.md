@@ -32,32 +32,32 @@ shipped with the Flutter app — see
 
 ## Kitchen asset checklist
 
-| Export name | Output path |
-|---|---|
-| `fridge_000` | `content/art/rendered/props/fridge/fridge_000.png` |
-| `stove_000` | `content/art/rendered/props/stove/stove_000.png` |
-| `mug_000` | `content/art/rendered/props/mug/mug_000.png` |
-| `sink_000` | `content/art/rendered/props/sink/sink_000.png` |
-| `cabinet_000` | `content/art/rendered/props/cabinet/cabinet_000.png` |
-| `cabinet_045` | `content/art/rendered/props/cabinet/cabinet_045.png` |
-| `island_000` | `content/art/rendered/props/island/island_000.png` |
-| `stool_000` | `content/art/rendered/props/stool/stool_000.png` |
-| `shelf_000` | `content/art/rendered/props/shelf/shelf_000.png` |
-| `rug_000` | `content/art/rendered/props/rug/rug_000.png` |
-| `plant_01_000` | `content/art/rendered/props/plant_01/plant_01_000.png` |
-| `plant_02_000` | `content/art/rendered/props/plant_02/plant_02_000.png` |
-| `jar_000` | `content/art/rendered/props/jar/jar_000.png` |
-| `kettle_000` | `content/art/rendered/props/kettle/kettle_000.png` |
-| `picture_000` | `content/art/rendered/props/picture/picture_000.png` (wall pivot — see below) |
-| `dish_stack_small_000` | `content/art/rendered/props/dish_stack_small/dish_stack_small_000.png` |
-| `dish_stack_large_000` | `content/art/rendered/props/dish_stack_large/dish_stack_large_000.png` |
-| `pan_000` | `content/art/rendered/props/pan/pan_000.png` |
-| `crumbs_000` | `content/art/rendered/props/crumbs/crumbs_000.png` |
-| `garbage_bag_000` | `content/art/rendered/props/garbage_bag/garbage_bag_000.png` |
-| `wall_000` | `content/art/rendered/props/wall/wall_000.png` |
-| `floor_000` | `content/art/rendered/props/floor/floor_000.png` |
-| `window_000` | `content/art/rendered/props/window/window_000.png` (wall pivot — see below) |
-| `curtain_000` | `content/art/rendered/props/curtain/curtain_000.png` (wall pivot — see below) |
+| Export name | Output path | Status |
+|---|---|---|
+| `fridge_000` | `content/art/rendered/props/fridge/fridge_000.png` | rendered |
+| `stove_000` | `content/art/rendered/props/stove/stove_000.png` | rendered |
+| `mug_000` | `content/art/rendered/props/mug/mug_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `sink_000` | `content/art/rendered/props/sink/sink_000.png` | rendered |
+| `cabinet_000` | `content/art/rendered/props/cabinet/cabinet_000.png` | rendered |
+| `cabinet_045` | `content/art/rendered/props/cabinet/cabinet_045.png` | rendered |
+| `island_000` | `content/art/rendered/props/island/island_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `stool_000` | `content/art/rendered/props/stool/stool_000.png` | rendered |
+| `shelf_000` | `content/art/rendered/props/shelf/shelf_000.png` | rendered |
+| `rug_000` | `content/art/rendered/props/rug/rug_000.png` | rendered (floor covering) |
+| `plant_01_000` | `content/art/rendered/props/plant_01/plant_01_000.png` | rendered |
+| `plant_02_000` | `content/art/rendered/props/plant_02/plant_02_000.png` | rendered |
+| `jar_000` | `content/art/rendered/props/jar/jar_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `kettle_000` | `content/art/rendered/props/kettle/kettle_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `picture_000` | `content/art/rendered/props/picture/picture_000.png` (wall mount — see below) | deferred — no matching FBX in the Quaternius pack |
+| `dish_stack_small_000` | `content/art/rendered/props/dish_stack_small/dish_stack_small_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `dish_stack_large_000` | `content/art/rendered/props/dish_stack_large/dish_stack_large_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `pan_000` | `content/art/rendered/props/pan/pan_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `crumbs_000` | `content/art/rendered/props/crumbs/crumbs_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `garbage_bag_000` | `content/art/rendered/props/garbage_bag/garbage_bag_000.png` | rendered (Trashcan_Cylindric.fbx substitute) |
+| `wall_000` | `content/art/rendered/props/wall/wall_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `floor_000` | `content/art/rendered/props/floor/floor_000.png` | deferred — no matching FBX in the Quaternius pack |
+| `window_000` | `content/art/rendered/props/window/window_000.png` (wall mount — see below) | rendered |
+| `curtain_000` | `content/art/rendered/props/curtain/curtain_000.png` (wall mount — see below) | rendered |
 
 Note: the spec's own checklist (design doc §4) groups `plant_01`/`plant_02`
 and the two `dish_stack` sizes under folder names that already include
@@ -69,19 +69,31 @@ prefer the table above since it's what the shipped tool actually
 produces; update this table (not the code) if the folder grouping should
 instead match the spec's illustrative paths exactly.
 
+10 rows above (`mug`, `island`, `jar`, `kettle`, `picture`,
+`dish_stack_small`, `dish_stack_large`, `pan`, `crumbs`, `wall`, `floor`)
+have no matching model anywhere in `content/art/Ultimate House Interior
+Pack - June 2020/FBX/` — they need a substitute or hand-authored source
+asset before they can be rendered through this tool. This is a content
+backlog gap, not a tool defect: re-run the workflow above for each once a
+source model exists.
+
 ## Wall-mounted assets
 
 `picture`, `window`, and `curtain` pivot from vertical-center, not
-floor-contact — call `align_current_model("wall")` from the Godot editor's
-remote debugger / script console before exporting those three, instead of
-relying on the default floor pivot that runs automatically on placement.
+floor-contact. Check the **Wall mount** checkbox next to the export name
+field before placing (or immediately after placing) the model under
+`ModelRoot` — it re-aligns the pivot and re-aims the camera at the
+model's own center instead of the default floor-contact pivot and fixed
+floor-height aim point. Uncheck it before placing the next (non-wall)
+asset.
 
 ## Optional: shadow-disabled variant
 
 Per spec §5, a handful of assets may need a second pass with the key
 light off, alongside the normal `<name>.png`. This is a rare, manual
-escape hatch, not part of the mechanical per-asset loop: toggle
-`%DirectionalLight3D.visible = false` from the editor's remote script
-console, export again (the typed name is up to you — e.g. `fridge_shadow`),
-then manually move the resulting file next to the color pass and rename it
-to `<name>_shadow.png` if you want it to match the color pass's folder.
+escape hatch, not part of the mechanical per-asset loop: check the **Key
+light off (shadow pass)** checkbox, export again (the typed name is up to
+you — e.g. `fridge_shadow`), then manually move the resulting file next
+to the color pass and rename it to `<name>_shadow.png` if you want it to
+match the color pass's folder. Uncheck the checkbox afterward — it stays
+on for every subsequent export otherwise.

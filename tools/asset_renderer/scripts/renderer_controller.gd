@@ -37,6 +37,7 @@ const CAMERA_TARGET_Y := 1.6542215
 @onready var export_button: Button = %ExportButton
 @onready var wall_pivot_checkbox: CheckBox = %WallPivotCheckbox
 @onready var floor_covering_checkbox: CheckBox = %FloorCoveringCheckbox
+@onready var key_light_off_checkbox: CheckBox = %KeyLightOffCheckbox
 @onready var preview_rect: TextureRect = %PreviewRect
 
 func _ready() -> void:
@@ -48,6 +49,7 @@ func _ready() -> void:
 	model_root.child_entered_tree.connect(_on_model_root_child_entered)
 	wall_pivot_checkbox.toggled.connect(_on_framing_option_toggled)
 	floor_covering_checkbox.toggled.connect(_on_framing_option_toggled)
+	key_light_off_checkbox.toggled.connect(_on_key_light_off_toggled)
 	# A model dropped into ModelRoot in the editor's Local scene tree (the
 	# natural workflow) and saved is already a child by the time _ready()
 	# runs, so child_entered_tree never fires for it -- without this, the
@@ -72,6 +74,13 @@ func _on_framing_option_toggled(_pressed: bool) -> void:
 	# already placed still takes effect.
 	if model_root.get_child_count() > 0:
 		align_current_model(_current_pivot_mode())
+
+func _on_key_light_off_toggled(pressed: bool) -> void:
+	# Same "no live console" reasoning as _on_framing_option_toggled above --
+	# this checkbox is the actual mechanism for the README's shadow-disabled
+	# variant pass, replacing the impossible "toggle %DirectionalLight3D.visible
+	# from the remote script console" instruction.
+	key_light.visible = not pressed
 
 func _configure_environment() -> void:
 	var env := Environment.new()
