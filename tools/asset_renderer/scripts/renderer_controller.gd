@@ -36,6 +36,7 @@ const CAMERA_TARGET_Y := 1.6542215
 @onready var export_name_field: LineEdit = %ExportNameField
 @onready var export_button: Button = %ExportButton
 @onready var wall_pivot_checkbox: CheckBox = %WallPivotCheckbox
+@onready var floor_covering_checkbox: CheckBox = %FloorCoveringCheckbox
 @onready var preview_rect: TextureRect = %PreviewRect
 
 func _ready() -> void:
@@ -45,7 +46,8 @@ func _ready() -> void:
 	_configure_camera()
 	export_button.pressed.connect(_on_export_button_pressed)
 	model_root.child_entered_tree.connect(_on_model_root_child_entered)
-	wall_pivot_checkbox.toggled.connect(_on_wall_pivot_toggled)
+	wall_pivot_checkbox.toggled.connect(_on_framing_option_toggled)
+	floor_covering_checkbox.toggled.connect(_on_framing_option_toggled)
 	# A model dropped into ModelRoot in the editor's Local scene tree (the
 	# natural workflow) and saved is already a child by the time _ready()
 	# runs, so child_entered_tree never fires for it -- without this, the
@@ -62,12 +64,12 @@ func _on_model_root_child_entered(_node: Node) -> void:
 	# to look at before they ever touch the export field.
 	align_current_model(_current_pivot_mode())
 
-func _on_wall_pivot_toggled(_pressed: bool) -> void:
-	# Godot 4 has no live console for calling align_current_model("wall")
-	# by hand while Play is running (no scripting REPL/eval panel exists in
-	# the stock editor) -- this checkbox is the actual mechanism for the
-	# wall-mount pivot the README describes. Re-aligns immediately so
-	# toggling after a model is already placed still takes effect.
+func _on_framing_option_toggled(_pressed: bool) -> void:
+	# Godot 4 has no live console for calling align_current_model() by hand
+	# with an alternate pivot/scale mode while Play is running (no scripting
+	# REPL/eval panel exists in the stock editor) -- these checkboxes are the
+	# actual mechanism. Re-aligns immediately so toggling after a model is
+	# already placed still takes effect.
 	if model_root.get_child_count() > 0:
 		align_current_model(_current_pivot_mode())
 
@@ -143,6 +145,26 @@ func align_current_model(pivot_mode: String = "floor") -> void:
 	# so aiming at the fixed floor-calibrated CAMERA_TARGET_Y would look ~1.65m
 	# above a wall-mounted model and crop it low in frame. Aim at the origin
 	# instead, i.e. exactly where wall pivot already put the model's center.
+	if floor_covering_checkbox.button_pressed:
+		# Floor coverings (rugs, carpets) are flat and wide, not tall and
+		# narrow like the fridge the shared scale/aim was calibrated against.
+		# A rug's own vertical extent sits almost entirely *below* the fixed
+		# CAMERA_TARGET_Y (fridge-eye-height), so the fixed frustum crops its
+		# near corner -- confirmed by measurement: the rug's lowest point
+		# landed 0.28 world units past the fixed frustum's bottom edge (half
+		# extent 2.1555). A rug isn't scale-comparable to furniture props
+		# the way two furniture props are comparable to each other, so this
+		# is an explicit, opt-in exception (not a silent default change):
+		# fit the camera to this one model's own AABB instead of the shared
+		# calibration, same escape-hatch pattern as the README's manual
+		# shadow-variant pass.
+		var world_aabb := RendererMath.transform_aabb(aabb, model_root.transform)
+		var camera_basis := camera.transform.basis
+		camera.size = RendererMath.compute_orthogonal_camera_size(world_aabb, camera_basis, 1.0, CAMERA_PADDING_FACTOR)
+		var center := world_aabb.position + world_aabb.size * 0.5
+		camera.position = center + camera_basis.z.normalized() * CAMERA_DISTANCE
+		return
+	camera.size = CAMERA_ORTHO_SIZE
 	var target := Vector3.ZERO if pivot_mode == "wall" else Vector3(0.0, CAMERA_TARGET_Y, 0.0)
 	camera.position = target + camera.transform.basis.z.normalized() * CAMERA_DISTANCE
 
