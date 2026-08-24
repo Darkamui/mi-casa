@@ -16,6 +16,7 @@ const CAMERA_PADDING_FACTOR := 1.15
 @onready var model_root: Node3D = %ModelRoot
 @onready var export_name_field: LineEdit = %ExportNameField
 @onready var export_button: Button = %ExportButton
+@onready var preview_rect: TextureRect = %PreviewRect
 
 func _ready() -> void:
 	_configure_environment()
@@ -50,6 +51,10 @@ func _configure_environment() -> void:
 func _configure_viewport() -> void:
 	render_viewport.transparent_bg = true
 	render_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	# SubViewport has no on-screen presence of its own — without this, the
+	# render happens off-screen and the running window shows only the UI
+	# CanvasLayer over a blank background, with no way to eyeball framing.
+	preview_rect.texture = render_viewport.get_texture()
 
 func _configure_light() -> void:
 	key_light.light_color = Color(1.0, 0.93, 0.82)
