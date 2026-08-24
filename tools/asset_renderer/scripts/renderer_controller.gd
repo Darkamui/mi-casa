@@ -25,6 +25,12 @@ func _ready() -> void:
 	_configure_camera()
 	export_button.pressed.connect(_on_export_button_pressed)
 	model_root.child_entered_tree.connect(_on_model_root_child_entered)
+	# A model dropped into ModelRoot in the editor's Local scene tree (the
+	# natural workflow) and saved is already a child by the time _ready()
+	# runs, so child_entered_tree never fires for it -- without this, the
+	# camera stays at _configure_camera()'s unfit default ortho size.
+	if model_root.get_child_count() > 0:
+		align_current_model()
 
 func _on_model_root_child_entered(_node: Node) -> void:
 	# Auto-fit runs the moment a model is placed (spec §6, step 1) so the
