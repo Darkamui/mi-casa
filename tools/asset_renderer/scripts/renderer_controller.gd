@@ -102,6 +102,12 @@ func align_current_model(pivot_mode: String = "floor") -> void:
 	camera.size = RendererMath.compute_orthogonal_camera_size(
 		aligned_aabb, camera.global_transform.basis, aspect, CAMERA_PADDING_FACTOR
 	)
+	# _configure_camera() aims the camera at the world origin, which is the
+	# floor-pivot's contact point (y=0), not the model's vertical center --
+	# without retargeting here, the floor line sits at screen-center and the
+	# top of taller models rides past the frustum's upper edge.
+	var target := aligned_aabb.position + aligned_aabb.size * 0.5
+	camera.position = target + camera.transform.basis.z.normalized() * CAMERA_DISTANCE
 
 func _folder_for(typed_name: String) -> String:
 	var parts := typed_name.split("_")
