@@ -85,3 +85,10 @@ EOL. Drift 2.32+ bundles SQLite automatically; use `NativeDatabase`
   migrates to Built-in Kotlin. Not an issue today; worth checking for
   a `rive`/`rive_native` upgrade if Android builds ever start failing
   with a KGP-related error.
+- Godot 4.7.1 lives at `C:\Godot\`. Two Windows binaries exist:
+  `Godot_v4.7.1-stable_win64.exe` (GUI subsystem — use for interactive
+  editor sessions) and `Godot_v4.7.1-stable_win64_console.exe` (console
+  subsystem — **required** for `--headless` runs where `print()` output
+  must reach the terminal; the GUI binary silently swallows it). Used by
+  `tools/asset_renderer/` (see
+  `docs/superpowers/plans/2026-08-24-godot-asset-renderer.md`).

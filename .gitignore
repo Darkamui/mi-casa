@@ -19,3 +19,8 @@ build/
 # Dev-time-only 3D asset source packs (rendered PNGs in content/art/rendered/
 # are what actually ships — see docs/hearthbound_2_5d_quaternius_handoff.md)
 content/art/Ultimate House Interior Pack - June 2020/
+
+# Godot asset renderer (tools/asset_renderer/) — dev-time tool, not shipped
+tools/asset_renderer/.godot/
+tools/asset_renderer/models/*
+!tools/asset_renderer/models/.gitkeep
