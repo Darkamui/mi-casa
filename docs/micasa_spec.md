@@ -1,4 +1,4 @@
-# Hearthbound — Product & Implementation Spec
+# MiCasa — Product & Implementation Spec
 
 **Status:** v1.0 — consolidated from concept draft + visual direction, with product review changes applied.
 **Audience:** implementation agent (Claude Code) and the developer.
@@ -74,7 +74,7 @@ The concept draft's 5-step wizard (rooms → task editing → cleaning style →
 3. > Put one thing near you back where it belongs.
 4. User does it physically. Presses **DONE**.
 5. The object restores in-world. Light warms. Companion celebrates. Haptic. Music resolves.
-   > **That's Hearthbound.**
+   > **That's MiCasa.**
 6. *Only then:*
    > Want to build your home?
 
@@ -112,7 +112,7 @@ Never put basic chore functionality behind a subscription wall.
 
 ### 2.8 Name
 
-`Hearthbound` is a working title. **Trademark and app-store search must be cleared before any public asset carries it.** It sits close to several existing cozy-game titles.
+`MiCasa` is a working title. **Trademark and app-store search must be cleared before any public asset carries it.** It sits close to several existing cozy-game titles.
 
 ---
 
@@ -367,7 +367,7 @@ XP exists as a quiet number. **No resource types in Phase 0.** No upgrade tree.
 
 ### 5.3 Technical direction
 
-**Framework: Flutter / Dart.** Hearthbound is roughly **40% game, 60% polished mobile product**. A game engine makes the world easy and the product miserable (forms, text fields, accessibility, deep links, subscriptions, mobile lifecycle); a pure app framework makes the world hard. Flutter is the least-bad split, and the peripheral 60% is where most of the actual screens live.
+**Framework: Flutter / Dart.** MiCasa is roughly **40% game, 60% polished mobile product**. A game engine makes the world easy and the product miserable (forms, text fields, accessibility, deep links, subscriptions, mobile lifecycle); a pure app framework makes the world hard. Flutter is the least-bad split, and the peripheral 60% is where most of the actual screens live.
 
 The governing architectural idea:
 
@@ -481,7 +481,7 @@ Never: *You have 4 overdue chores.*
 
 ## 11. Open questions
 
-1. Trademark clearance on "Hearthbound."
+1. Trademark clearance on "MiCasa."
 2. Week-1 spike outcomes (§5.4): stem sync, widget, haptics. Stem sync is the largest technical unknown in the project.
 3. Whether Flame is needed at all (§5.3) — decide from the wow prototype, not in advance.
 4. §8 long-term driver.
