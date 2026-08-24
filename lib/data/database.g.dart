@@ -1068,6 +1068,302 @@ class ChoreCompletionsCompanion extends UpdateCompanion<ChoreCompletion> {
   }
 }
 
+class $EntropyStatesTable extends EntropyStates
+    with TableInfo<$EntropyStatesTable, EntropyState> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EntropyStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _choreIdMeta = const VerificationMeta(
+    'choreId',
+  );
+  @override
+  late final GeneratedColumn<String> choreId = GeneratedColumn<String>(
+    'chore_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES chores (id)',
+    ),
+  );
+  static const VerificationMeta _lastCompletedAtMeta = const VerificationMeta(
+    'lastCompletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastCompletedAt =
+      GeneratedColumn<DateTime>(
+        'last_completed_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _learnedRisePerHourMeta =
+      const VerificationMeta('learnedRisePerHour');
+  @override
+  late final GeneratedColumn<double> learnedRisePerHour =
+      GeneratedColumn<double>(
+        'learned_rise_per_hour',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    choreId,
+    lastCompletedAt,
+    learnedRisePerHour,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'entropy_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EntropyState> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chore_id')) {
+      context.handle(
+        _choreIdMeta,
+        choreId.isAcceptableOrUnknown(data['chore_id']!, _choreIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_choreIdMeta);
+    }
+    if (data.containsKey('last_completed_at')) {
+      context.handle(
+        _lastCompletedAtMeta,
+        lastCompletedAt.isAcceptableOrUnknown(
+          data['last_completed_at']!,
+          _lastCompletedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learned_rise_per_hour')) {
+      context.handle(
+        _learnedRisePerHourMeta,
+        learnedRisePerHour.isAcceptableOrUnknown(
+          data['learned_rise_per_hour']!,
+          _learnedRisePerHourMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {choreId};
+  @override
+  EntropyState map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EntropyState(
+      choreId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chore_id'],
+      )!,
+      lastCompletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_completed_at'],
+      ),
+      learnedRisePerHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}learned_rise_per_hour'],
+      ),
+    );
+  }
+
+  @override
+  $EntropyStatesTable createAlias(String alias) {
+    return $EntropyStatesTable(attachedDatabase, alias);
+  }
+}
+
+class EntropyState extends DataClass implements Insertable<EntropyState> {
+  final String choreId;
+  final DateTime? lastCompletedAt;
+  final double? learnedRisePerHour;
+  const EntropyState({
+    required this.choreId,
+    this.lastCompletedAt,
+    this.learnedRisePerHour,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chore_id'] = Variable<String>(choreId);
+    if (!nullToAbsent || lastCompletedAt != null) {
+      map['last_completed_at'] = Variable<DateTime>(lastCompletedAt);
+    }
+    if (!nullToAbsent || learnedRisePerHour != null) {
+      map['learned_rise_per_hour'] = Variable<double>(learnedRisePerHour);
+    }
+    return map;
+  }
+
+  EntropyStatesCompanion toCompanion(bool nullToAbsent) {
+    return EntropyStatesCompanion(
+      choreId: Value(choreId),
+      lastCompletedAt: lastCompletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastCompletedAt),
+      learnedRisePerHour: learnedRisePerHour == null && nullToAbsent
+          ? const Value.absent()
+          : Value(learnedRisePerHour),
+    );
+  }
+
+  factory EntropyState.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EntropyState(
+      choreId: serializer.fromJson<String>(json['choreId']),
+      lastCompletedAt: serializer.fromJson<DateTime?>(json['lastCompletedAt']),
+      learnedRisePerHour: serializer.fromJson<double?>(
+        json['learnedRisePerHour'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'choreId': serializer.toJson<String>(choreId),
+      'lastCompletedAt': serializer.toJson<DateTime?>(lastCompletedAt),
+      'learnedRisePerHour': serializer.toJson<double?>(learnedRisePerHour),
+    };
+  }
+
+  EntropyState copyWith({
+    String? choreId,
+    Value<DateTime?> lastCompletedAt = const Value.absent(),
+    Value<double?> learnedRisePerHour = const Value.absent(),
+  }) => EntropyState(
+    choreId: choreId ?? this.choreId,
+    lastCompletedAt: lastCompletedAt.present
+        ? lastCompletedAt.value
+        : this.lastCompletedAt,
+    learnedRisePerHour: learnedRisePerHour.present
+        ? learnedRisePerHour.value
+        : this.learnedRisePerHour,
+  );
+  EntropyState copyWithCompanion(EntropyStatesCompanion data) {
+    return EntropyState(
+      choreId: data.choreId.present ? data.choreId.value : this.choreId,
+      lastCompletedAt: data.lastCompletedAt.present
+          ? data.lastCompletedAt.value
+          : this.lastCompletedAt,
+      learnedRisePerHour: data.learnedRisePerHour.present
+          ? data.learnedRisePerHour.value
+          : this.learnedRisePerHour,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EntropyState(')
+          ..write('choreId: $choreId, ')
+          ..write('lastCompletedAt: $lastCompletedAt, ')
+          ..write('learnedRisePerHour: $learnedRisePerHour')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(choreId, lastCompletedAt, learnedRisePerHour);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EntropyState &&
+          other.choreId == this.choreId &&
+          other.lastCompletedAt == this.lastCompletedAt &&
+          other.learnedRisePerHour == this.learnedRisePerHour);
+}
+
+class EntropyStatesCompanion extends UpdateCompanion<EntropyState> {
+  final Value<String> choreId;
+  final Value<DateTime?> lastCompletedAt;
+  final Value<double?> learnedRisePerHour;
+  final Value<int> rowid;
+  const EntropyStatesCompanion({
+    this.choreId = const Value.absent(),
+    this.lastCompletedAt = const Value.absent(),
+    this.learnedRisePerHour = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EntropyStatesCompanion.insert({
+    required String choreId,
+    this.lastCompletedAt = const Value.absent(),
+    this.learnedRisePerHour = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : choreId = Value(choreId);
+  static Insertable<EntropyState> custom({
+    Expression<String>? choreId,
+    Expression<DateTime>? lastCompletedAt,
+    Expression<double>? learnedRisePerHour,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (choreId != null) 'chore_id': choreId,
+      if (lastCompletedAt != null) 'last_completed_at': lastCompletedAt,
+      if (learnedRisePerHour != null)
+        'learned_rise_per_hour': learnedRisePerHour,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EntropyStatesCompanion copyWith({
+    Value<String>? choreId,
+    Value<DateTime?>? lastCompletedAt,
+    Value<double?>? learnedRisePerHour,
+    Value<int>? rowid,
+  }) {
+    return EntropyStatesCompanion(
+      choreId: choreId ?? this.choreId,
+      lastCompletedAt: lastCompletedAt ?? this.lastCompletedAt,
+      learnedRisePerHour: learnedRisePerHour ?? this.learnedRisePerHour,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (choreId.present) {
+      map['chore_id'] = Variable<String>(choreId.value);
+    }
+    if (lastCompletedAt.present) {
+      map['last_completed_at'] = Variable<DateTime>(lastCompletedAt.value);
+    }
+    if (learnedRisePerHour.present) {
+      map['learned_rise_per_hour'] = Variable<double>(learnedRisePerHour.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EntropyStatesCompanion(')
+          ..write('choreId: $choreId, ')
+          ..write('lastCompletedAt: $lastCompletedAt, ')
+          ..write('learnedRisePerHour: $learnedRisePerHour, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1076,9 +1372,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ChoreCompletionsTable choreCompletions = $ChoreCompletionsTable(
     this,
   );
+  late final $EntropyStatesTable entropyStates = $EntropyStatesTable(this);
   late final RoomsDao roomsDao = RoomsDao(this as AppDatabase);
   late final ChoresDao choresDao = ChoresDao(this as AppDatabase);
   late final ChoreCompletionsDao choreCompletionsDao = ChoreCompletionsDao(
+    this as AppDatabase,
+  );
+  late final EntropyStateDao entropyStateDao = EntropyStateDao(
     this as AppDatabase,
   );
   @override
@@ -1089,6 +1389,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     rooms,
     chores,
     choreCompletions,
+    entropyStates,
   ];
 }
 
@@ -1441,6 +1742,24 @@ final class $$ChoresTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$EntropyStatesTable, List<EntropyState>>
+  _entropyStatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.entropyStates,
+    aliasName: 'chores__id__entropy_states__chore_id',
+  );
+
+  $$EntropyStatesTableProcessedTableManager get entropyStatesRefs {
+    final manager = $$EntropyStatesTableTableManager(
+      $_db,
+      $_db.entropyStates,
+    ).filter((f) => f.choreId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_entropyStatesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ChoresTableFilterComposer
@@ -1511,6 +1830,31 @@ class $$ChoresTableFilterComposer
           }) => $$ChoreCompletionsTableFilterComposer(
             $db: $db,
             $table: $db.choreCompletions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> entropyStatesRefs(
+    Expression<bool> Function($$EntropyStatesTableFilterComposer f) f,
+  ) {
+    final $$EntropyStatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.entropyStates,
+      getReferencedColumn: (t) => t.choreId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EntropyStatesTableFilterComposer(
+            $db: $db,
+            $table: $db.entropyStates,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1644,6 +1988,31 @@ class $$ChoresTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> entropyStatesRefs<T extends Object>(
+    Expression<T> Function($$EntropyStatesTableAnnotationComposer a) f,
+  ) {
+    final $$EntropyStatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.entropyStates,
+      getReferencedColumn: (t) => t.choreId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EntropyStatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.entropyStates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ChoresTableTableManager
@@ -1659,7 +2028,11 @@ class $$ChoresTableTableManager
           $$ChoresTableUpdateCompanionBuilder,
           (Chore, $$ChoresTableReferences),
           Chore,
-          PrefetchHooks Function({bool roomId, bool choreCompletionsRefs})
+          PrefetchHooks Function({
+            bool roomId,
+            bool choreCompletionsRefs,
+            bool entropyStatesRefs,
+          })
         > {
   $$ChoresTableTableManager(_$AppDatabase db, $ChoresTable table)
     : super(
@@ -1711,11 +2084,16 @@ class $$ChoresTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({roomId = false, choreCompletionsRefs = false}) {
+              ({
+                roomId = false,
+                choreCompletionsRefs = false,
+                entropyStatesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (choreCompletionsRefs) db.choreCompletions,
+                    if (entropyStatesRefs) db.entropyStates,
                   ],
                   addJoins:
                       <
@@ -1770,6 +2148,27 @@ class $$ChoresTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (entropyStatesRefs)
+                        await $_getPrefetchedData<
+                          Chore,
+                          $ChoresTable,
+                          EntropyState
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ChoresTableReferences
+                              ._entropyStatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ChoresTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).entropyStatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.choreId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -1790,7 +2189,11 @@ typedef $$ChoresTableProcessedTableManager =
       $$ChoresTableUpdateCompanionBuilder,
       (Chore, $$ChoresTableReferences),
       Chore,
-      PrefetchHooks Function({bool roomId, bool choreCompletionsRefs})
+      PrefetchHooks Function({
+        bool roomId,
+        bool choreCompletionsRefs,
+        bool entropyStatesRefs,
+      })
     >;
 typedef $$ChoreCompletionsTableCreateCompanionBuilder =
     ChoreCompletionsCompanion Function({
@@ -2099,6 +2502,291 @@ typedef $$ChoreCompletionsTableProcessedTableManager =
       ChoreCompletion,
       PrefetchHooks Function({bool choreId})
     >;
+typedef $$EntropyStatesTableCreateCompanionBuilder =
+    EntropyStatesCompanion Function({
+      required String choreId,
+      Value<DateTime?> lastCompletedAt,
+      Value<double?> learnedRisePerHour,
+      Value<int> rowid,
+    });
+typedef $$EntropyStatesTableUpdateCompanionBuilder =
+    EntropyStatesCompanion Function({
+      Value<String> choreId,
+      Value<DateTime?> lastCompletedAt,
+      Value<double?> learnedRisePerHour,
+      Value<int> rowid,
+    });
+
+final class $$EntropyStatesTableReferences
+    extends BaseReferences<_$AppDatabase, $EntropyStatesTable, EntropyState> {
+  $$EntropyStatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ChoresTable _choreIdTable(_$AppDatabase db) =>
+      db.chores.createAlias('entropy_states__chore_id__chores__id');
+
+  $$ChoresTableProcessedTableManager get choreId {
+    final $_column = $_itemColumn<String>('chore_id')!;
+
+    final manager = $$ChoresTableTableManager(
+      $_db,
+      $_db.chores,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_choreIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$EntropyStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $EntropyStatesTable> {
+  $$EntropyStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<DateTime> get lastCompletedAt => $composableBuilder(
+    column: $table.lastCompletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get learnedRisePerHour => $composableBuilder(
+    column: $table.learnedRisePerHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ChoresTableFilterComposer get choreId {
+    final $$ChoresTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.choreId,
+      referencedTable: $db.chores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChoresTableFilterComposer(
+            $db: $db,
+            $table: $db.chores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EntropyStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $EntropyStatesTable> {
+  $$EntropyStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<DateTime> get lastCompletedAt => $composableBuilder(
+    column: $table.lastCompletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get learnedRisePerHour => $composableBuilder(
+    column: $table.learnedRisePerHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ChoresTableOrderingComposer get choreId {
+    final $$ChoresTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.choreId,
+      referencedTable: $db.chores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChoresTableOrderingComposer(
+            $db: $db,
+            $table: $db.chores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EntropyStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EntropyStatesTable> {
+  $$EntropyStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<DateTime> get lastCompletedAt => $composableBuilder(
+    column: $table.lastCompletedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get learnedRisePerHour => $composableBuilder(
+    column: $table.learnedRisePerHour,
+    builder: (column) => column,
+  );
+
+  $$ChoresTableAnnotationComposer get choreId {
+    final $$ChoresTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.choreId,
+      referencedTable: $db.chores,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChoresTableAnnotationComposer(
+            $db: $db,
+            $table: $db.chores,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EntropyStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EntropyStatesTable,
+          EntropyState,
+          $$EntropyStatesTableFilterComposer,
+          $$EntropyStatesTableOrderingComposer,
+          $$EntropyStatesTableAnnotationComposer,
+          $$EntropyStatesTableCreateCompanionBuilder,
+          $$EntropyStatesTableUpdateCompanionBuilder,
+          (EntropyState, $$EntropyStatesTableReferences),
+          EntropyState,
+          PrefetchHooks Function({bool choreId})
+        > {
+  $$EntropyStatesTableTableManager(_$AppDatabase db, $EntropyStatesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EntropyStatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EntropyStatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EntropyStatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> choreId = const Value.absent(),
+                Value<DateTime?> lastCompletedAt = const Value.absent(),
+                Value<double?> learnedRisePerHour = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EntropyStatesCompanion(
+                choreId: choreId,
+                lastCompletedAt: lastCompletedAt,
+                learnedRisePerHour: learnedRisePerHour,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String choreId,
+                Value<DateTime?> lastCompletedAt = const Value.absent(),
+                Value<double?> learnedRisePerHour = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EntropyStatesCompanion.insert(
+                choreId: choreId,
+                lastCompletedAt: lastCompletedAt,
+                learnedRisePerHour: learnedRisePerHour,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$EntropyStatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({choreId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (choreId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.choreId,
+                        referencedTable: $$EntropyStatesTableReferences
+                            ._choreIdTable(db),
+                        referencedColumn: $$EntropyStatesTableReferences
+                            ._choreIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$EntropyStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EntropyStatesTable,
+      EntropyState,
+      $$EntropyStatesTableFilterComposer,
+      $$EntropyStatesTableOrderingComposer,
+      $$EntropyStatesTableAnnotationComposer,
+      $$EntropyStatesTableCreateCompanionBuilder,
+      $$EntropyStatesTableUpdateCompanionBuilder,
+      (EntropyState, $$EntropyStatesTableReferences),
+      EntropyState,
+      PrefetchHooks Function({bool choreId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2109,4 +2797,6 @@ class $AppDatabaseManager {
       $$ChoresTableTableManager(_db, _db.chores);
   $$ChoreCompletionsTableTableManager get choreCompletions =>
       $$ChoreCompletionsTableTableManager(_db, _db.choreCompletions);
+  $$EntropyStatesTableTableManager get entropyStates =>
+      $$EntropyStatesTableTableManager(_db, _db.entropyStates);
 }
