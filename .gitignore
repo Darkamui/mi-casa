@@ -15,3 +15,7 @@ Thumbs.db
 .pub-cache/
 .pub/
 build/
+
+# Dev-time-only 3D asset source packs (rendered PNGs in content/art/rendered/
+# are what actually ships — see docs/hearthbound_2_5d_quaternius_handoff.md)
+content/art/Ultimate House Interior Pack - June 2020/
