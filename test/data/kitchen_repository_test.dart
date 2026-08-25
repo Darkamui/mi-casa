@@ -8,6 +8,7 @@ import 'package:micasa/simulation/combo_engine.dart';
 import 'package:micasa/simulation/entropy_engine.dart';
 import 'package:micasa/simulation/kitchen_session.dart';
 import 'package:micasa/simulation/models/task_definition.dart';
+import 'package:micasa/simulation/models/task_rung.dart';
 
 final _tasks = [
   const TaskDefinition(
@@ -17,6 +18,21 @@ final _tasks = [
     baseDurationMinutes: 2,
     // 0.05/h -> 20h to fully decay.
     defaultRisePerHour: 0.05,
+    rungs: [
+      TaskRung(
+        id: 'kitchen.dishes.rack',
+        label: 'Just empty the rack',
+        durationMinutes: 1,
+        credit: 0.5,
+      ),
+      TaskRung(
+        id: 'kitchen.dishes.one',
+        label: 'Put away one thing',
+        durationMinutes: 0.5,
+        credit: 0.2,
+        setupQuest: true,
+      ),
+    ],
   ),
   const TaskDefinition(
     id: 'kitchen.wipe_counter',
@@ -53,8 +69,11 @@ void main() {
   test('seeding twice does not duplicate the kitchen', () async {
     await repository.ensureSeeded(_tasks, _t0);
 
+    final expected = _tasks.fold<int>(0, (n, t) => n + 1 + t.rungs.length);
+
     expect((await db.roomsDao.getAllRooms()).length, 1);
-    expect((await db.choresDao.getActiveChores()).length, _tasks.length);
+    expect((await db.choresDao.getActiveChores()).length, expected,
+        reason: 'rungs are stored acts too, and are seeded exactly once');
   });
 
   test('a completed task is still completed after a relaunch', () async {
@@ -120,6 +139,96 @@ void main() {
     expect(session.risePerHour['kitchen.dishes'], closeTo(1 / 48, 0.0001));
     expect(session.risePerHour['kitchen.wipe_counter'], 0.05,
         reason: 'a task with no history has nothing to learn from');
+  });
+
+  group('rungs survive a relaunch (spec 3.7)', () {
+    test('a rung finished yesterday still shows in today\'s room', () async {
+      final at = _t0.subtract(const Duration(hours: 8));
+      await repository.recordCompletion(
+        taskId: 'kitchen.dishes.rack',
+        at: at,
+        actualMinutes: 1,
+      );
+
+      final withRung = await reopen(_t0);
+      final withoutRung = engine.seed(now: _t0);
+
+      // Half the sixteen-hour backlog was cleared eight hours ago, so the
+      // dishes must read better than a room where nothing happened.
+      expect(engine.needLevel(withRung, 'kitchen.dishes', _t0),
+          lessThan(engine.needLevel(withoutRung, 'kitchen.dishes', _t0)));
+    });
+
+    test('a rung is never restored as a finished chore', () async {
+      await repository.recordCompletion(
+        taskId: 'kitchen.dishes.rack',
+        at: _t0,
+        actualMinutes: 1,
+      );
+
+      final session = await reopen(_t0);
+
+      expect(session.lastCompletedAt['kitchen.dishes'], isNot(_t0));
+      expect(engine.needLevel(session, 'kitchen.dishes', _t0),
+          greaterThan(0),
+          reason: 'emptying the rack is not doing the dishes');
+    });
+
+    test('two small acts add up to more than one', () async {
+      await repository.recordCompletion(
+        taskId: 'kitchen.dishes.one',
+        at: _t0.subtract(const Duration(hours: 2)),
+        actualMinutes: 0.5,
+      );
+      final once = await reopen(_t0);
+
+      await repository.recordCompletion(
+        taskId: 'kitchen.dishes.one',
+        at: _t0.subtract(const Duration(hours: 1)),
+        actualMinutes: 0.5,
+      );
+      final twice = await reopen(_t0);
+
+      expect(engine.needLevel(twice, 'kitchen.dishes', _t0),
+          lessThan(engine.needLevel(once, 'kitchen.dishes', _t0)));
+    });
+
+    test('a rung before the last real completion is spent, not re-credited',
+        () async {
+      await repository.recordCompletion(
+        taskId: 'kitchen.dishes.rack',
+        at: _t0.subtract(const Duration(hours: 10)),
+        actualMinutes: 1,
+      );
+      await repository.recordCompletion(
+        taskId: 'kitchen.dishes',
+        at: _t0.subtract(const Duration(hours: 4)),
+        actualMinutes: 2,
+      );
+
+      final session = await reopen(_t0);
+
+      // The chore was actually done after that rung: the rung's partial
+      // credit is history, and must not pull the clock back again.
+      expect(session.lastCompletedAt['kitchen.dishes'],
+          _t0.subtract(const Duration(hours: 4)));
+    });
+
+    test('a rung teaches its own estimate across a relaunch', () async {
+      for (var i = 0; i < 4; i++) {
+        await repository.recordCompletion(
+          taskId: 'kitchen.dishes.rack',
+          at: _t0.add(Duration(days: i)),
+          actualMinutes: 4,
+        );
+      }
+
+      final session = await reopen(_t0.add(const Duration(days: 4)));
+
+      expect(session.estimateMinutes['kitchen.dishes.rack'], greaterThan(1.5));
+      expect(engine.offeredMinutes(session, 'kitchen.dishes'), 2,
+          reason: 'the rung learned about itself, not about the dishes');
+    });
   });
 
   test('a fresh install opens on the seeded state, not an empty one', () async {

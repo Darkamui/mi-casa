@@ -9,8 +9,10 @@ class QuestCard extends StatelessWidget {
     super.key,
     required this.onPlay,
     this.onDismiss,
+    this.onNotThis,
     this.title = 'Kitchen Rescue',
     this.minutes = 2,
+    this.eyebrow = 'KITCHEN RESCUE',
   });
 
   final VoidCallback onPlay;
@@ -19,8 +21,16 @@ class QuestCard extends StatelessWidget {
   /// taps something to see what it is should be able to put it back down.
   final VoidCallback? onDismiss;
 
+  /// Opens the five answers of spec §3.7. Distinct from [onDismiss]: closing
+  /// the card is "not now", NOT THIS is "not this one".
+  final VoidCallback? onNotThis;
+
   final String title;
   final double minutes;
+
+  /// Names what kind of offer this is - the room's rescue, a smaller version
+  /// of it, or a setup quest (§3.6).
+  final String eyebrow;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +47,9 @@ class QuestCard extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'KITCHEN RESCUE',
-                  style: TextStyle(
+                Text(
+                  eyebrow,
+                  style: const TextStyle(
                     color: Color(0xFFA9C7A0),
                     fontSize: 12,
                     letterSpacing: 2,
@@ -59,6 +69,14 @@ class QuestCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(onPressed: onPlay, child: const Text('PLAY')),
+                if (onNotThis != null)
+                  TextButton(
+                    onPressed: onNotThis,
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF9A9AA6),
+                    ),
+                    child: const Text('NOT THIS'),
+                  ),
               ],
             ),
           ),

@@ -4,28 +4,88 @@
     "roomTypeId": "kitchen",
     "label": "Put the dishes away",
     "baseDurationMinutes": 2.0,
-    "defaultRisePerHour": 0.041667
+    "defaultRisePerHour": 0.041667,
+    "rungs": [
+      {
+        "id": "kitchen.dishes.rack",
+        "label": "Just empty the drying rack",
+        "durationMinutes": 1.0,
+        "credit": 0.5
+      },
+      {
+        "id": "kitchen.dishes.one",
+        "label": "Put away one thing",
+        "durationMinutes": 0.5,
+        "credit": 0.2,
+        "setupQuest": true
+      }
+    ]
   },
   {
     "id": "kitchen.clear_counter",
     "roomTypeId": "kitchen",
     "label": "Clear the counter",
     "baseDurationMinutes": 2.0,
-    "defaultRisePerHour": 0.020833
+    "defaultRisePerHour": 0.020833,
+    "rungs": [
+      {
+        "id": "kitchen.clear_counter.corner",
+        "label": "Clear one corner of the counter",
+        "durationMinutes": 1.0,
+        "credit": 0.4
+      },
+      {
+        "id": "kitchen.clear_counter.one",
+        "label": "Move one thing off the counter",
+        "durationMinutes": 0.5,
+        "credit": 0.15,
+        "setupQuest": true
+      }
+    ]
   },
   {
     "id": "kitchen.wipe_counter",
     "roomTypeId": "kitchen",
     "label": "Wipe the counter",
     "baseDurationMinutes": 2.0,
-    "defaultRisePerHour": 0.041667
+    "defaultRisePerHour": 0.041667,
+    "rungs": [
+      {
+        "id": "kitchen.wipe_counter.spot",
+        "label": "Wipe the one spot that bothers you",
+        "durationMinutes": 0.5,
+        "credit": 0.35
+      },
+      {
+        "id": "kitchen.wipe_counter.cloth",
+        "label": "Put a clean cloth by the sink",
+        "durationMinutes": 0.5,
+        "credit": 0.1,
+        "setupQuest": true
+      }
+    ]
   },
   {
     "id": "kitchen.garbage",
     "roomTypeId": "kitchen",
     "label": "Take out the garbage",
     "baseDurationMinutes": 3.0,
-    "defaultRisePerHour": 0.013889
+    "defaultRisePerHour": 0.013889,
+    "rungs": [
+      {
+        "id": "kitchen.garbage.tie",
+        "label": "Tie the bag shut",
+        "durationMinutes": 0.5,
+        "credit": 0.3
+      },
+      {
+        "id": "kitchen.garbage.door",
+        "label": "Stand the bag by the door",
+        "durationMinutes": 0.5,
+        "credit": 0.15,
+        "setupQuest": true
+      }
+    ]
   },
   {
     "id": "kitchen.new_bag",

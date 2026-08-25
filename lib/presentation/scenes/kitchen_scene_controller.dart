@@ -10,7 +10,7 @@ import '../../simulation/content_loader.dart';
 import '../../simulation/kitchen_session.dart';
 
 export '../../simulation/kitchen_session.dart'
-    show RunPhase, KitchenSession, KitchenSessionEngine;
+    show RunPhase, KitchenSession, KitchenSessionEngine, NotThisReason;
 
 /// The clock, as a dependency. Overriding this is how a test drives entropy
 /// forward without waiting for real hours to pass.
@@ -80,6 +80,11 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
 
   void dismissQuest() => _apply(_engine.dismissQuest);
 
+  /// NOT THIS (spec §3.7). No write, because nothing happened - the only
+  /// record a rejection leaves is what the app offers next.
+  void notThis(NotThisReason reason) =>
+      _apply((s) => _engine.notThis(s, reason, _now()));
+
   void startRun() => _apply((s) => _engine.startRun(s, _now()));
 
   /// DONE.
@@ -93,7 +98,10 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
 
     final now = _now();
     final active = _engine.activeElapsed(before, now);
-    final taskId = before.currentTaskId;
+    // A rung is stored under its own id: it is a different act from the task
+    // it stands in for, and the estimate it teaches belongs to itself.
+    final taskId =
+        _engine.activeRung(before)?.id ?? before.currentTaskId;
 
     _apply((s) => _engine.completeTask(s, now));
 

@@ -55,6 +55,54 @@ void main() {
     expect(vitality, isNot(NeedState.critical));
   });
 
+  test('every ladder ends on a setup quest', () {
+    // Spec §3.7: "The last rung sounds absurd and is the most valuable thing
+    // in the system." A ladder whose bottom rung is still a chore has not
+    // gone far enough down to be worth having.
+    for (final task in tasks.where((t) => t.rungs.isNotEmpty)) {
+      expect(task.rungs.last.setupQuest, isTrue,
+          reason: '${task.id} bottoms out at "${task.rungs.last.label}"');
+    }
+  });
+
+  test('each rung is smaller and cheaper than the one above it', () {
+    for (final task in tasks) {
+      var minutes = task.baseDurationMinutes;
+      var credit = 1.0;
+      for (final rung in task.rungs) {
+        expect(rung.durationMinutes, lessThanOrEqualTo(minutes),
+            reason: '${rung.id} is not shorter than what it replaces');
+        expect(rung.credit, lessThan(credit),
+            reason: '${rung.id} claims as much credit as a bigger rung');
+        minutes = rung.durationMinutes;
+        credit = rung.credit;
+      }
+    }
+  });
+
+  test('no rung is worth a finished chore', () {
+    // Partial credit is the honesty mechanic: full credit would let a
+    // thirty-second act launder itself into a clean room (§2.4).
+    for (final task in tasks) {
+      for (final rung in task.rungs) {
+        expect(rung.credit, greaterThan(0));
+        expect(rung.credit, lessThan(1.0));
+      }
+    }
+  });
+
+  test('rung ids are unique across the room', () {
+    final ids = <String>[];
+    for (final task in tasks) {
+      ids.add(task.id);
+      ids.addAll(task.rungs.map((rung) => rung.id));
+    }
+
+    // Ids are chore-row keys in the store, so a collision would merge two
+    // different acts' histories.
+    expect(ids.toSet().length, ids.length);
+  });
+
   test('the opening HUD and the opening painting agree', () {
     // The dish pile is the room's only state overlay. If the HUD says the
     // kitchen needs attention while the art shows a clean sink, the player

@@ -3,6 +3,32 @@ import 'duration_learner.dart';
 import 'entropy_engine.dart';
 import 'models/adjacency_edge.dart';
 import 'models/task_definition.dart';
+import 'models/task_rung.dart';
+
+/// Why the user said no (spec §3.7).
+///
+/// The five answers are not interchangeable, and treating them as one
+/// "dismiss" is what turns an escape hatch into nagging. Two of them are
+/// statements about the *task*, two about *this moment*, and one about the
+/// *room* - and each deserves a different response.
+enum NotThisReason {
+  tooTired('Too tired'),
+  takesTooLong('Takes too long'),
+  dontFeelLikeIt("Don't feel like it"),
+  cantRightNow("Can't right now"),
+  notActuallyNeeded('Not actually needed');
+
+  const NotThisReason(this.label);
+
+  final String label;
+
+  /// Whether this answer is evidence about the task rather than the moment.
+  ///
+  /// "Can't right now" is about the next ten minutes, not about the chore -
+  /// counting it would walk someone down the ladder for being interrupted.
+  bool get isAboutTheTask =>
+      this == tooTired || this == takesTooLong || this == dontFeelLikeIt;
+}
 
 /// Where a run currently is.
 ///
@@ -36,6 +62,8 @@ class KitchenSession {
     this.pausedAt,
     this.activeBeforePause = Duration.zero,
     this.runActive = Duration.zero,
+    this.activeRung,
+    this.rejections = const {},
   });
 
   final RunPhase phase;
@@ -86,6 +114,20 @@ class KitchenSession {
   /// though nothing spends it yet.
   final Duration runActive;
 
+  /// Which rung of [currentTaskId]'s ladder is in play, if any.
+  ///
+  /// An index rather than an id, and the *parent* stays in [currentTaskId]:
+  /// entropy, adjacency and the room's hotspots all keep working on the real
+  /// task while the user is offered a smaller version of it.
+  final int? activeRung;
+
+  /// Per task, how many times the user has said no *about the task itself*.
+  ///
+  /// Spec §3.7: "Repeated rejection triggers the downgrade ladder, not
+  /// nagging." In-session only, like [momentum] - a no on Tuesday should not
+  /// still be shrinking the offer on Friday.
+  final Map<String, int> rejections;
+
   KitchenSession copyWith({
     RunPhase? phase,
     String? currentTaskId,
@@ -99,10 +141,13 @@ class KitchenSession {
     DateTime? pausedAt,
     Duration? activeBeforePause,
     Duration? runActive,
+    int? activeRung,
+    Map<String, int>? rejections,
     bool clearCurrentTask = false,
     bool clearComboOffer = false,
     bool clearTaskStartedAt = false,
     bool clearPausedAt = false,
+    bool clearActiveRung = false,
   }) {
     return KitchenSession(
       phase: phase ?? this.phase,
@@ -118,6 +163,8 @@ class KitchenSession {
       pausedAt: clearPausedAt ? null : pausedAt ?? this.pausedAt,
       activeBeforePause: activeBeforePause ?? this.activeBeforePause,
       runActive: runActive ?? this.runActive,
+      activeRung: clearActiveRung ? null : activeRung ?? this.activeRung,
+      rejections: rejections ?? this.rejections,
     );
   }
 
@@ -263,6 +310,34 @@ class KitchenSessionEngine {
       taskById(taskId)?.baseDurationMinutes ??
       2;
 
+  /// The rung currently standing in for the offered task, if the ladder has
+  /// been walked down. Null means the full task is on the table.
+  TaskRung? activeRung(KitchenSession session) {
+    final index = session.activeRung;
+    final taskId = session.currentTaskId;
+    if (index == null || taskId == null) return null;
+    final rungs = taskById(taskId)?.rungs ?? const <TaskRung>[];
+    return index < rungs.length ? rungs[index] : null;
+  }
+
+  /// What the offer or the run should actually be called right now.
+  String? currentLabel(KitchenSession session) {
+    final rung = activeRung(session);
+    if (rung != null) return rung.label;
+    final taskId = session.currentTaskId;
+    return taskId == null ? null : taskById(taskId)?.label;
+  }
+
+  /// Minutes for whatever is currently on offer, rung included.
+  double currentMinutes(KitchenSession session) {
+    final rung = activeRung(session);
+    if (rung != null) {
+      return session.estimateMinutes[rung.id] ?? rung.durationMinutes;
+    }
+    final taskId = session.currentTaskId;
+    return taskId == null ? 2 : offeredMinutes(session, taskId);
+  }
+
   KitchenSession offerQuest(KitchenSession session, String taskId) {
     if (session.phase != RunPhase.idle && session.phase != RunPhase.restored) {
       return session;
@@ -275,12 +350,82 @@ class KitchenSessionEngine {
       completedThisRun: const {},
       momentum: 0,
       clearComboOffer: true,
+      clearActiveRung: true,
     );
   }
 
   KitchenSession dismissQuest(KitchenSession session) {
     if (session.phase != RunPhase.questOffered) return session;
-    return session.copyWith(phase: RunPhase.idle, clearCurrentTask: true);
+    return session.copyWith(
+      phase: RunPhase.idle,
+      clearCurrentTask: true,
+      clearActiveRung: true,
+    );
+  }
+
+  /// **NOT THIS** (spec §3.7). The no-penalty escape from every mission.
+  ///
+  /// Nothing here punishes: no streak breaks, no completion is recorded, the
+  /// duration learner hears nothing. What changes is what gets offered *next*,
+  /// and that depends entirely on which of the five answers was given:
+  ///
+  /// - "Not actually needed" is the user correcting the app about their home,
+  ///   so the app believes them: the task stops asking, and its cadence slows.
+  /// - "Can't right now" is about the next ten minutes, not the chore. It
+  ///   closes the card and is forgotten.
+  /// - The other three are evidence the task is too big, and repeated
+  ///   rejection walks it down the ladder rather than asking again.
+  KitchenSession notThis(
+    KitchenSession session,
+    NotThisReason reason,
+    DateTime now,
+  ) {
+    if (session.phase != RunPhase.questOffered) return session;
+    final id = session.currentTaskId;
+    final task = id == null ? null : taskById(id);
+    if (task == null || id == null) return session;
+    final taskId = id;
+
+    if (reason == NotThisReason.notActuallyNeeded) {
+      return session.copyWith(
+        phase: RunPhase.idle,
+        // Stop nagging now, and expect it back later than before. This grants
+        // no reward and records no completion - the room simply stops
+        // claiming something the user has told us is untrue.
+        lastCompletedAt: {...session.lastCompletedAt, taskId: now},
+        risePerHour: {
+          ...session.risePerHour,
+          taskId: entropy.slowedCadence(
+            session.risePerHour[taskId] ?? task.defaultRisePerHour,
+          ),
+        },
+        clearCurrentTask: true,
+        clearActiveRung: true,
+      );
+    }
+
+    if (!reason.isAboutTheTask) return dismissQuest(session);
+
+    final rejections = (session.rejections[taskId] ?? 0) + 1;
+    final counted = {...session.rejections, taskId: rejections};
+
+    // One no closes the card. A second is a pattern, and a pattern is what
+    // the ladder is for. Once on the ladder every further no steps down
+    // again - by then the user has said no three times and being asked the
+    // same question a fourth is exactly the nagging §3.7 rules out.
+    final nextRung = session.activeRung == null ? 0 : session.activeRung! + 1;
+    final canDowngrade = rejections >= 2 && nextRung < task.rungs.length;
+
+    if (!canDowngrade) {
+      return session.copyWith(
+        phase: RunPhase.idle,
+        rejections: counted,
+        clearCurrentTask: true,
+        clearActiveRung: true,
+      );
+    }
+
+    return session.copyWith(rejections: counted, activeRung: nextRung);
   }
 
   KitchenSession startRun(KitchenSession session, DateTime now) {
@@ -336,6 +481,7 @@ class KitchenSessionEngine {
       clearCurrentTask: true,
       clearTaskStartedAt: true,
       clearPausedAt: true,
+      clearActiveRung: true,
       activeBeforePause: Duration.zero,
     );
   }
@@ -351,23 +497,104 @@ class KitchenSessionEngine {
     // for an hour did not take an hour.
     final active = activeElapsed(session, now);
     final actualMinutes = active.inSeconds / 60.0;
+    final rung = activeRung(session);
+
+    // A rung earns the same celebration as the task - §3.7's whole claim is
+    // that the smallest rung is the most valuable thing in the system, and an
+    // apologetic reward would contradict it. What it does not earn is the
+    // task's *entropy*: the room only reports what actually happened.
+    final credited = rung == null
+        ? now
+        : creditedTimestamp(
+            lastCompletedAt: session.lastCompletedAt[taskId],
+            now: now,
+            credit: rung.credit,
+          );
+
+    // The estimate learns under whichever id was actually run. Finishing
+    // "put away one thing" in twenty seconds is not evidence that the dishes
+    // take twenty seconds.
+    final learningId = rung?.id ?? taskId;
 
     return session.copyWith(
       phase: RunPhase.celebrating,
-      lastCompletedAt: {...session.lastCompletedAt, taskId: now},
+      lastCompletedAt: {...session.lastCompletedAt, taskId: credited},
       estimateMinutes: {
         ...session.estimateMinutes,
-        taskId: learner.updateEstimate(
-          currentEstimateMinutes: offeredMinutes(session, taskId),
+        learningId: learner.updateEstimate(
+          currentEstimateMinutes: currentMinutes(session),
           actualMinutes: actualMinutes,
         ),
       },
-      completedThisRun: {...session.completedThisRun, taskId},
+      // A rung does not retire its parent: the dishes are still there, so the
+      // combo engine must stay free to come back to them.
+      completedThisRun:
+          rung == null ? {...session.completedThisRun, taskId} : null,
       momentum: session.momentum + 1,
       runActive: session.runActive + active,
       activeBeforePause: Duration.zero,
       clearTaskStartedAt: true,
       clearPausedAt: true,
+      clearActiveRung: true,
+    );
+  }
+
+  /// Where a task's clock lands after partial credit.
+  ///
+  /// Pulls [lastCompletedAt] forward by [credit] of the gap it had opened up,
+  /// so the need drops by that share rather than to zero. Pure and public
+  /// because the store replays rung history through it on load.
+  DateTime creditedTimestamp({
+    required DateTime? lastCompletedAt,
+    required DateTime now,
+    required double credit,
+  }) {
+    if (lastCompletedAt == null) return now;
+    final gap = now.difference(lastCompletedAt);
+    if (gap.isNegative) return lastCompletedAt;
+    return lastCompletedAt.add(
+      Duration(microseconds: (gap.inMicroseconds * credit.clamp(0.0, 1.0)).round()),
+    );
+  }
+
+  /// Replays a rung's own duration history. Rungs learn like tasks do (spec
+  /// §5.2 item 13) - they just learn about themselves.
+  KitchenSession withRungEstimate(
+    KitchenSession session, {
+    required TaskRung rung,
+    required List<double> durationsMinutes,
+  }) {
+    if (durationsMinutes.isEmpty) return session;
+    var estimate = rung.durationMinutes;
+    for (final actual in durationsMinutes) {
+      estimate = learner.updateEstimate(
+        currentEstimateMinutes: estimate,
+        actualMinutes: actual,
+      );
+    }
+    return session.copyWith(
+      estimateMinutes: {...session.estimateMinutes, rung.id: estimate},
+    );
+  }
+
+  /// Replays one stored rung completion. Used by the store on load so a rung
+  /// finished yesterday still shows in today's room.
+  KitchenSession withRungCompletion(
+    KitchenSession session, {
+    required String taskId,
+    required TaskRung rung,
+    required DateTime at,
+  }) {
+    if (taskById(taskId) == null) return session;
+    return session.copyWith(
+      lastCompletedAt: {
+        ...session.lastCompletedAt,
+        taskId: creditedTimestamp(
+          lastCompletedAt: session.lastCompletedAt[taskId],
+          now: at,
+          credit: rung.credit,
+        ),
+      },
     );
   }
 
@@ -404,6 +631,7 @@ class KitchenSessionEngine {
       activeBeforePause: Duration.zero,
       clearComboOffer: true,
       clearPausedAt: true,
+      clearActiveRung: true,
     );
   }
 

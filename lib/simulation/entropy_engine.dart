@@ -38,6 +38,20 @@ class EntropyEngine {
     return 1.0 / medianHours;
   }
 
+  /// The task was offered and the user said it was not actually needed.
+  ///
+  /// Spec §3.8's objective is "maintain the home with the least unnecessary
+  /// work", so being told the suggestion was unnecessary is the most direct
+  /// evidence the engine ever gets. It backs off by a third rather than
+  /// abandoning the task, so a single impatient tap cannot silence a chore
+  /// forever - repeated ones compound, which is the intended way to stop
+  /// being asked about something you genuinely do not do.
+  double slowedCadence(double risePerHour) {
+    const floor = 1.0 / (24 * 90); // Ninety days. Not never.
+    final slowed = risePerHour * 0.667;
+    return slowed < floor ? floor : slowed;
+  }
+
   double _median(List<double> values) {
     final sorted = [...values]..sort();
     final mid = sorted.length ~/ 2;

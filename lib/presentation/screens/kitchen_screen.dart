@@ -10,6 +10,7 @@ import '../room/room_definition_loader.dart';
 import '../room/room_vitality.dart';
 import '../scenes/kitchen_scene_controller.dart';
 import '../widgets/combo_card.dart';
+import '../widgets/not_this_sheet.dart';
 import '../widgets/quest_card.dart';
 import '../widgets/room_restored_banner.dart';
 import '../widgets/single_task_prompt.dart';
@@ -35,6 +36,9 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
 
   bool _showRestored = false;
   Timer? _restoredTimer;
+
+  /// The five answers of §3.7, open over the quest card.
+  bool _showNotThis = false;
 
   @override
   void dispose() {
@@ -103,6 +107,15 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     );
   }
 
+  /// The offer names itself honestly. A setup quest says so (§3.6) rather
+  /// than presenting itself as a shrunken failure of the real chore - that
+  /// framing is the whole reason the bottom rung works.
+  String _eyebrowFor(KitchenSession state, KitchenSessionEngine engine) {
+    final rung = engine.activeRung(state);
+    if (rung == null) return 'KITCHEN RESCUE';
+    return rung.setupQuest ? 'GETTING READY' : 'SMALLER';
+  }
+
   /// Celebrate where the work happened. Falls back to the middle of the room
   /// only if the task has no painted home.
   ({double x, double y}) _spotFor(RoomDefinition? definition, String? taskId) {
@@ -169,11 +182,21 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
         if (state.phase == RunPhase.questOffered && currentTask != null)
           Center(
             child: QuestCard(
-              title: currentTask.label,
-              minutes: engine.offeredMinutes(state, currentTask.id),
+              title: engine.currentLabel(state) ?? currentTask.label,
+              minutes: engine.currentMinutes(state),
+              eyebrow: _eyebrowFor(state, engine),
               onPlay: controller.startRun,
               onDismiss: controller.dismissQuest,
+              onNotThis: () => setState(() => _showNotThis = true),
             ),
+          ),
+        if (_showNotThis && state.phase == RunPhase.questOffered)
+          NotThisSheet(
+            onDismiss: () => setState(() => _showNotThis = false),
+            onChoose: (reason) {
+              setState(() => _showNotThis = false);
+              controller.notThis(reason);
+            },
           ),
         if (state.phase == RunPhase.comboOffered && state.comboOffer != null)
           Center(
@@ -187,8 +210,8 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
           ),
         if (state.phase == RunPhase.running && currentTask != null)
           SingleTaskPrompt(
-            label: currentTask.label,
-            targetMinutes: engine.offeredMinutes(state, currentTask.id),
+            label: engine.currentLabel(state) ?? currentTask.label,
+            targetMinutes: engine.currentMinutes(state),
             elapsed: controller.activeElapsed,
             paused: state.isPaused,
             onDone: controller.completeTask,

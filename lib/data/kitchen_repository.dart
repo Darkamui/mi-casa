@@ -40,13 +40,23 @@ class KitchenRepository {
     final chores = await _db.choresDao.getChoresForRoom(roomId);
     final known = chores.map((chore) => chore.id).toSet();
 
-    for (final task in tasks) {
-      if (known.contains(task.id)) continue;
+    // Rungs get chore rows of their own (spec §3.7). They are not tasks - they
+    // never nag from the room - but "put away one thing" is a real thing
+    // someone really did, and it has to survive a relaunch like anything else.
+    final ids = <String, String>{
+      for (final task in tasks) ...{
+        task.id: task.id,
+        for (final rung in task.rungs) rung.id: task.id,
+      }
+    };
+
+    for (final entry in ids.entries) {
+      if (known.contains(entry.key)) continue;
       await _db.choresDao.insertChore(
         ChoresCompanion.insert(
-          id: task.id,
+          id: entry.key,
           roomId: roomId,
-          taskDefinitionId: task.id,
+          taskDefinitionId: entry.value,
           createdAt: now,
         ),
       );
@@ -66,15 +76,53 @@ class KitchenRepository {
     for (final task in engine.tasks) {
       final completions =
           await _db.choreCompletionsDao.getCompletionHistory(task.id);
-      if (completions.isEmpty) continue;
+      if (completions.isNotEmpty) {
+        final durations = await _durationsFor(task.id);
+        restored = engine.withHistory(
+          restored,
+          taskId: task.id,
+          completions: completions,
+          durationsMinutes: durations,
+        );
+      }
 
-      final durations = await _durationsFor(task.id);
-      restored = engine.withHistory(
-        restored,
-        taskId: task.id,
-        completions: completions,
-        durationsMinutes: durations,
-      );
+      // Rung history is applied *after* the parent's, in the order it
+      // happened, because partial credit compounds: two small acts since the
+      // last real completion are worth more than one, and neither is worth a
+      // finished chore. Rung completions are deliberately kept out of
+      // `withHistory` - they are not evidence about the task's cadence.
+      final rungs = {for (final rung in task.rungs) rung.id: rung};
+      if (rungs.isEmpty) continue;
+
+      final events = <({DateTime at, String rungId})>[];
+      for (final rungId in rungs.keys) {
+        for (final at in await _db.choreCompletionsDao
+            .getCompletionHistory(rungId)) {
+          events.add((at: at, rungId: rungId));
+        }
+      }
+      events.sort((a, b) => a.at.compareTo(b.at));
+
+      for (final event in events) {
+        final last = restored.lastCompletedAt[task.id];
+        if (last != null && !event.at.isAfter(last)) continue;
+        restored = engine.withRungCompletion(
+          restored,
+          taskId: task.id,
+          rung: rungs[event.rungId]!,
+          at: event.at,
+        );
+      }
+
+      for (final rungId in rungs.keys) {
+        final durations = await _durationsFor(rungId);
+        if (durations.isEmpty) continue;
+        restored = engine.withRungEstimate(
+          restored,
+          rung: rungs[rungId]!,
+          durationsMinutes: durations,
+        );
+      }
     }
 
     return restored;
