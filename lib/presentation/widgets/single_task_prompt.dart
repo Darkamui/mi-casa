@@ -14,7 +14,7 @@ class SingleTaskPrompt extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Put the dishes away',
+              'Take out the garbage',
               style: TextStyle(color: Colors.white, fontSize: 20),
             ),
             const SizedBox(height: 16),

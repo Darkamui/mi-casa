@@ -1,0 +1,10 @@
+{
+  "pristine": [],
+  "normal": [],
+  "messy": [
+    { "layer": "entropy", "sprite": "garbage_bag", "anchor": "floor" }
+  ],
+  "disaster": [
+    { "layer": "entropy", "sprite": "garbage_bag", "anchor": "floor" }
+  ]
+}

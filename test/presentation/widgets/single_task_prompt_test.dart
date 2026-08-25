@@ -10,7 +10,7 @@ void main() {
       home: Scaffold(body: SingleTaskPrompt(onDone: () => done = true)),
     ));
 
-    expect(find.text('Put the dishes away'), findsOneWidget);
+    expect(find.text('Take out the garbage'), findsOneWidget);
 
     await tester.tap(find.text('DONE'));
 

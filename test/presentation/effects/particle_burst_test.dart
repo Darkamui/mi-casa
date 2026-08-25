@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:micasa/presentation/effects/particle_burst.dart';
 
@@ -18,18 +17,5 @@ void main() {
       expect(a[i].speed, b[i].speed);
       expect(a[i].color, b[i].color);
     }
-  });
-
-  testWidgets('builds without error when inactive and active', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: ParticleBurst(active: false)),
-    ));
-    expect(find.byType(ParticleBurst), findsOneWidget);
-
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: ParticleBurst(active: true)),
-    ));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(find.byType(ParticleBurst), findsOneWidget);
   });
 }

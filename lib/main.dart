@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'presentation/scenes/kitchen_scene.dart';
+import 'presentation/flame/kitchen_flame_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: MiCasaApp()));
@@ -15,7 +15,7 @@ class MiCasaApp extends StatelessWidget {
     return const MaterialApp(
       title: 'MiCasa',
       debugShowCheckedModeBanner: false,
-      home: KitchenScene(),
+      home: KitchenFlameScreen(),
     );
   }
 }
