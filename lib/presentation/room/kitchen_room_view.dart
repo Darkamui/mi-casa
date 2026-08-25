@@ -43,8 +43,8 @@ class KitchenRoomView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Letterbox rather than distort: the two layers only register with
-        // each other at the authored aspect ratio.
+        // Letterbox rather than distort: every hotspot and overlay area is
+        // authored against the painting's own proportions.
         final frame = _fitFrame(constraints.biggest, room.aspectRatio);
 
         return Center(
@@ -57,17 +57,7 @@ class KitchenRoomView extends StatelessWidget {
                 clipBehavior: Clip.hardEdge,
                 children: [
                   Positioned.fill(
-                    child: Image.asset(room.backAsset, fit: BoxFit.cover),
-                  ),
-                  // The structure is authored at the frame's own size and
-                  // bottom-aligned; that is the registration that lines its
-                  // fridge up with the back wall's fridge.
-                  Positioned.fill(
-                    child: Image.asset(
-                      room.structureAsset,
-                      fit: BoxFit.fill,
-                      alignment: Alignment.bottomCenter,
-                    ),
+                    child: Image.asset(room.baseAsset, fit: BoxFit.cover),
                   ),
                   if (showDishPile) _overlay(room.overlayById('dish_pile'), frame),
                   _companion(frame, treatment),

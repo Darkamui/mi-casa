@@ -6,11 +6,8 @@ import 'package:micasa/presentation/room/room_definition.dart';
 const _source = '''
 {
   "id": "kitchen",
-  "aspectRatio": 1.4535,
-  "layers": {
-    "back": "art/back.png",
-    "structure": "art/structure.png"
-  },
+  "aspectRatio": 1.59879,
+  "base": "art/kitchen.png",
   "overlays": [
     { "id": "dish_pile", "asset": "art/dishes.png", "area": [0.5, 0.25, 0.2, 0.1] }
   ],
@@ -27,9 +24,8 @@ void main() {
     final room = RoomDefinition.parse(_source);
 
     expect(room.id, 'kitchen');
-    expect(room.aspectRatio, closeTo(1.4535, 1e-9));
-    expect(room.backAsset, 'art/back.png');
-    expect(room.structureAsset, 'art/structure.png');
+    expect(room.aspectRatio, closeTo(1.59879, 1e-9));
+    expect(room.baseAsset, 'art/kitchen.png');
     expect(room.hotspots.single.taskId, 'kitchen.dishes');
     expect(room.overlays.single.asset, 'art/dishes.png');
     expect(room.companionSpot.x, 0.7);
@@ -73,7 +69,7 @@ void main() {
     const bad = '''
     {
       "id": "x", "aspectRatio": 1.0,
-      "layers": {"back": "b.png", "structure": "s.png"},
+      "base": "b.png",
       "hotspots": [{"id":"a","label":"A","taskId":"t","area":[0.1,0.2]}],
       "companionSpot": [0.5, 0.5]
     }

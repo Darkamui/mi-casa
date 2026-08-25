@@ -76,8 +76,7 @@ class RoomDefinition {
   const RoomDefinition({
     required this.id,
     required this.aspectRatio,
-    required this.backAsset,
-    required this.structureAsset,
+    required this.baseAsset,
     required this.overlays,
     required this.hotspots,
     required this.companionSpot,
@@ -85,16 +84,14 @@ class RoomDefinition {
 
   final String id;
 
-  /// Width / height of the room frame. The two layer images are authored
-  /// at this ratio; the frame letterboxes rather than distorting them.
+  /// Width / height of the painting. The frame letterboxes to this rather
+  /// than distorting, so every normalised area below stays true to the art.
   final double aspectRatio;
 
-  /// Back wall: the finished room painting behind everything.
-  final String backAsset;
-
-  /// Foreground furniture mass, registered against [backAsset] at native
-  /// scale, bottom-aligned and horizontally centred.
-  final String structureAsset;
+  /// The one finished illustration this room is (direction doc §1). Not a
+  /// stack of registered layers, not a set of furniture sprites — the
+  /// painting already encodes perspective, lighting, and occlusion.
+  final String baseAsset;
 
   final List<RoomOverlay> overlays;
   final List<RoomHotspot> hotspots;
@@ -103,13 +100,11 @@ class RoomDefinition {
   final ({double x, double y}) companionSpot;
 
   factory RoomDefinition.fromJson(Map<String, dynamic> json) {
-    final layers = json['layers'] as Map<String, dynamic>;
     final spot = json['companionSpot'] as List<dynamic>;
     return RoomDefinition(
       id: json['id'] as String,
       aspectRatio: (json['aspectRatio'] as num).toDouble(),
-      backAsset: layers['back'] as String,
-      structureAsset: layers['structure'] as String,
+      baseAsset: json['base'] as String,
       overlays: (json['overlays'] as List<dynamic>? ?? const [])
           .map((e) => RoomOverlay.fromJson(e as Map<String, dynamic>))
           .toList(growable: false),
