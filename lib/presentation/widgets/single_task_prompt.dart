@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 
 class SingleTaskPrompt extends StatelessWidget {
   final VoidCallback onDone;
-  const SingleTaskPrompt({super.key, required this.onDone});
+
+  /// The one task in play. Spec §2 locks this to a single task at a time —
+  /// never a checklist.
+  final String label;
+
+  const SingleTaskPrompt({
+    super.key,
+    required this.onDone,
+    this.label = 'Take out the garbage',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,9 +22,9 @@ class SingleTaskPrompt extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Take out the garbage',
-              style: TextStyle(color: Colors.white, fontSize: 20),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 20),
             ),
             const SizedBox(height: 16),
             ElevatedButton(

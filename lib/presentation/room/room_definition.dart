@@ -1,0 +1,150 @@
+import 'dart:convert';
+import 'dart:ui' show Rect, Size;
+
+/// A tappable region of the room illustration (direction doc §1/§2).
+///
+/// The room is one finished painting, so interaction points are invisible
+/// zones positioned over meaningful parts of it rather than separate
+/// sprites. Areas are normalised 0..1 against the room frame so the same
+/// data works at any render size.
+class RoomHotspot {
+  const RoomHotspot({
+    required this.id,
+    required this.label,
+    required this.taskId,
+    required this.area,
+  });
+
+  final String id;
+  final String label;
+
+  /// The task in `content/tasks/tasks.json` this zone offers.
+  final String taskId;
+
+  /// Normalised rect within the room frame.
+  final Rect area;
+
+  factory RoomHotspot.fromJson(Map<String, dynamic> json) => RoomHotspot(
+        id: json['id'] as String,
+        label: json['label'] as String,
+        taskId: json['taskId'] as String,
+        area: _rectFrom(json['area'] as List<dynamic>, 'hotspot ${json['id']}'),
+      );
+
+  /// This zone's pixel rect inside a room frame of [frame].
+  Rect resolve(Size frame) => Rect.fromLTWH(
+        area.left * frame.width,
+        area.top * frame.height,
+        area.width * frame.width,
+        area.height * frame.height,
+      );
+}
+
+/// A small state prop drawn over the base illustration (doc §5) — the base
+/// room is never swapped out, only stateful objects appear and disappear.
+class RoomOverlay {
+  const RoomOverlay({
+    required this.id,
+    required this.asset,
+    required this.area,
+  });
+
+  final String id;
+  final String asset;
+  final Rect area;
+
+  factory RoomOverlay.fromJson(Map<String, dynamic> json) => RoomOverlay(
+        id: json['id'] as String,
+        asset: json['asset'] as String,
+        area: _rectFrom(json['area'] as List<dynamic>, 'overlay ${json['id']}'),
+      );
+
+  Rect resolve(Size frame) => Rect.fromLTWH(
+        area.left * frame.width,
+        area.top * frame.height,
+        area.width * frame.width,
+        area.height * frame.height,
+      );
+}
+
+/// A room, as authored in `content/rooms/*.json`.
+///
+/// CLAUDE.md's content-driven rule applies: adding a room must not require
+/// a code change, so layer paths, hotspots, and overlay placement all live
+/// in data.
+class RoomDefinition {
+  const RoomDefinition({
+    required this.id,
+    required this.aspectRatio,
+    required this.backAsset,
+    required this.structureAsset,
+    required this.overlays,
+    required this.hotspots,
+    required this.companionSpot,
+  });
+
+  final String id;
+
+  /// Width / height of the room frame. The two layer images are authored
+  /// at this ratio; the frame letterboxes rather than distorting them.
+  final double aspectRatio;
+
+  /// Back wall: the finished room painting behind everything.
+  final String backAsset;
+
+  /// Foreground furniture mass, registered against [backAsset] at native
+  /// scale, bottom-aligned and horizontally centred.
+  final String structureAsset;
+
+  final List<RoomOverlay> overlays;
+  final List<RoomHotspot> hotspots;
+
+  /// Where the companion stands, normalised, as its bottom-centre point.
+  final ({double x, double y}) companionSpot;
+
+  factory RoomDefinition.fromJson(Map<String, dynamic> json) {
+    final layers = json['layers'] as Map<String, dynamic>;
+    final spot = json['companionSpot'] as List<dynamic>;
+    return RoomDefinition(
+      id: json['id'] as String,
+      aspectRatio: (json['aspectRatio'] as num).toDouble(),
+      backAsset: layers['back'] as String,
+      structureAsset: layers['structure'] as String,
+      overlays: (json['overlays'] as List<dynamic>? ?? const [])
+          .map((e) => RoomOverlay.fromJson(e as Map<String, dynamic>))
+          .toList(growable: false),
+      hotspots: (json['hotspots'] as List<dynamic>)
+          .map((e) => RoomHotspot.fromJson(e as Map<String, dynamic>))
+          .toList(growable: false),
+      companionSpot: (
+        x: (spot[0] as num).toDouble(),
+        y: (spot[1] as num).toDouble()
+      ),
+    );
+  }
+
+  static RoomDefinition parse(String source) =>
+      RoomDefinition.fromJson(jsonDecode(source) as Map<String, dynamic>);
+
+  RoomOverlay? overlayById(String id) {
+    for (final overlay in overlays) {
+      if (overlay.id == id) return overlay;
+    }
+    return null;
+  }
+
+  RoomHotspot? hotspotById(String id) {
+    for (final hotspot in hotspots) {
+      if (hotspot.id == id) return hotspot;
+    }
+    return null;
+  }
+}
+
+Rect _rectFrom(List<dynamic> values, String what) {
+  if (values.length != 4) {
+    throw FormatException('$what: area must be [left, top, width, height]');
+  }
+  final v = values.map((e) => (e as num).toDouble()).toList();
+  return Rect.fromLTWH(v[0], v[1], v[2], v[3]);
+}
