@@ -9,6 +9,7 @@ import '../room/room_vitality.dart';
 import '../scenes/kitchen_scene_controller.dart';
 import '../widgets/quest_card.dart';
 import '../widgets/single_task_prompt.dart';
+import '../widgets/vitality_hud.dart';
 
 /// The point-and-click kitchen (direction doc §19, §24).
 ///
@@ -64,6 +65,8 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
                 room: definition,
                 vitality: vitality,
                 showDishPile: !restored && phase != RunPhase.celebrating,
+                // The room stops advertising itself while a card is up.
+                showAffordances: phase == RunPhase.idle,
                 companionMood: switch (phase) {
                   RunPhase.celebrating => CompanionMood.excited,
                   RunPhase.restored => CompanionMood.happy,
@@ -80,12 +83,21 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
                 },
               ),
             ),
-            _vitalityBadge(vitality),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: VitalityHud(vitality: vitality),
+                ),
+              ),
+            ),
             if (phase == RunPhase.questOffered)
               Center(
                 child: QuestCard(
                   title: _selected?.label ?? 'Kitchen Rescue',
                   onPlay: notifier.startRun,
+                  onDismiss: notifier.dismissQuest,
                 ),
               ),
             if (phase == RunPhase.running)
@@ -99,25 +111,4 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     );
   }
 
-  /// Coarse verbal state only — spec §2 forbids percentages in the UI.
-  Widget _vitalityBadge(RoomVitality vitality) => Align(
-        alignment: Alignment.topCenter,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 28),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            child: Text(
-              vitality.treatment.label,
-              key: ValueKey(vitality),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                letterSpacing: 4,
-                fontWeight: FontWeight.w600,
-                shadows: [Shadow(color: Colors.black54, blurRadius: 8)],
-              ),
-            ),
-          ),
-        ),
-      );
 }

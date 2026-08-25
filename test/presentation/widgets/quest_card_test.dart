@@ -14,4 +14,23 @@ void main() {
 
     expect(played, isTrue);
   });
+
+  testWidgets('the close button backs out without playing', (tester) async {
+    var played = false;
+    var dismissed = false;
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: QuestCard(
+          onPlay: () => played = true,
+          onDismiss: () => dismissed = true,
+        ),
+      ),
+    ));
+
+    await tester.tap(find.byIcon(Icons.close));
+
+    expect(dismissed, isTrue);
+    expect(played, isFalse, reason: 'declining must never start the run');
+  });
 }

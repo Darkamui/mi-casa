@@ -37,6 +37,32 @@ void main() {
     expect(container.read(kitchenSceneProvider), RunPhase.idle);
   });
 
+  test('dismissQuest returns an offer to idle so it can be re-offered', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(kitchenSceneProvider.notifier);
+
+    notifier.tapCompanion();
+    notifier.dismissQuest();
+    expect(container.read(kitchenSceneProvider), RunPhase.idle);
+
+    // Declining must not lock the player out of trying again.
+    notifier.tapCompanion();
+    expect(container.read(kitchenSceneProvider), RunPhase.questOffered);
+  });
+
+  test('dismissQuest cannot abandon a run already underway', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(kitchenSceneProvider.notifier);
+
+    notifier.tapCompanion();
+    notifier.startRun();
+    notifier.dismissQuest();
+
+    expect(container.read(kitchenSceneProvider), RunPhase.running);
+  });
+
   test('full happy path idle -> restored', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);

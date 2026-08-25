@@ -14,7 +14,7 @@
       "id": "sink",
       "label": "Dishes",
       "taskId": "kitchen.dishes",
-      "area": [0.55, 0.43, 0.16, 0.15]
+      "area": [0.55, 0.42, 0.16, 0.11]
     },
     {
       "id": "island",
