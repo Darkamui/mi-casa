@@ -29,6 +29,7 @@ class KitchenSession {
     required this.comboOffer,
     required this.lastCompletedAt,
     required this.estimateMinutes,
+    required this.risePerHour,
     required this.completedThisRun,
     required this.taskStartedAt,
     required this.momentum,
@@ -50,6 +51,13 @@ class KitchenSession {
 
   /// Per task, the current learned duration estimate.
   final Map<String, double> estimateMinutes;
+
+  /// Per task, how fast its need actually rises.
+  ///
+  /// Starts at the authored default and moves to the user's real cadence once
+  /// there is history to learn from. Spec §3.8: "If the user actually vacuums
+  /// every 9-12 days, it stops suggesting every 7."
+  final Map<String, double> risePerHour;
 
   /// Reset at the start of each run - the combo engine uses it to avoid
   /// suggesting something already done.
@@ -84,6 +92,7 @@ class KitchenSession {
     AdjacencyEdge? comboOffer,
     Map<String, DateTime>? lastCompletedAt,
     Map<String, double>? estimateMinutes,
+    Map<String, double>? risePerHour,
     Set<String>? completedThisRun,
     DateTime? taskStartedAt,
     int? momentum,
@@ -101,6 +110,7 @@ class KitchenSession {
       comboOffer: clearComboOffer ? null : comboOffer ?? this.comboOffer,
       lastCompletedAt: lastCompletedAt ?? this.lastCompletedAt,
       estimateMinutes: estimateMinutes ?? this.estimateMinutes,
+      risePerHour: risePerHour ?? this.risePerHour,
       completedThisRun: completedThisRun ?? this.completedThisRun,
       taskStartedAt:
           clearTaskStartedAt ? null : taskStartedAt ?? this.taskStartedAt,
@@ -165,6 +175,9 @@ class KitchenSessionEngine {
       estimateMinutes: {
         for (final task in tasks) task.id: task.baseDurationMinutes
       },
+      risePerHour: {
+        for (final task in tasks) task.id: task.defaultRisePerHour
+      },
       completedThisRun: const {},
       taskStartedAt: null,
       momentum: 0,
@@ -176,9 +189,46 @@ class KitchenSessionEngine {
     final last = session.lastCompletedAt[taskId];
     if (task == null || last == null) return 0;
     return entropy.needLevel(
-      risePerHour: task.defaultRisePerHour,
+      risePerHour: session.risePerHour[taskId] ?? task.defaultRisePerHour,
       lastCompletedAt: last,
       now: now,
+    );
+  }
+
+  /// Fold a task's real completion history back into the session.
+  ///
+  /// Pure, and takes the history as an argument: the simulation still knows
+  /// nothing about where it was stored. Both learned values are derived from
+  /// history rather than carried as separate mutable state, so replaying the
+  /// same history always gives the same room.
+  KitchenSession withHistory(
+    KitchenSession session, {
+    required String taskId,
+    required List<DateTime> completions,
+    required List<double> durationsMinutes,
+  }) {
+    final task = taskById(taskId);
+    if (task == null || completions.isEmpty) return session;
+
+    var estimate = task.baseDurationMinutes;
+    for (final actual in durationsMinutes) {
+      estimate = learner.updateEstimate(
+        currentEstimateMinutes: estimate,
+        actualMinutes: actual,
+      );
+    }
+
+    final sorted = [...completions]..sort();
+    return session.copyWith(
+      lastCompletedAt: {...session.lastCompletedAt, taskId: sorted.last},
+      estimateMinutes: {...session.estimateMinutes, taskId: estimate},
+      risePerHour: {
+        ...session.risePerHour,
+        taskId: entropy.learnedRisePerHour(
+          defaultRisePerHour: task.defaultRisePerHour,
+          completionHistory: sorted,
+        ),
+      },
     );
   }
 

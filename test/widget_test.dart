@@ -2,11 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:micasa/main.dart';
 import 'package:micasa/presentation/room/kitchen_room_view.dart';
+import 'package:micasa/presentation/scenes/kitchen_scene_controller.dart';
 import 'package:micasa/presentation/widgets/vitality_hud.dart';
 
 void main() {
   testWidgets('app boots into the kitchen room', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: MiCasaApp()));
+    await tester.pumpWidget(ProviderScope(
+      // No store: this test is about what the room shows on a first launch,
+      // and opening a real database would drag path_provider in with it.
+      overrides: [kitchenRepositoryProvider.overrideWithValue(null)],
+      child: const MiCasaApp(),
+    ));
     // Not pumpAndSettle: the hotspot affordances pulse forever by design,
     // so there is no steady state to settle into.
     await tester.pump();

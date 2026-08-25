@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/database.dart';
+import '../../data/kitchen_repository.dart';
 import '../../simulation/adjacency_graph.dart';
 import '../../simulation/combo_engine.dart';
 import '../../simulation/content_loader.dart';
@@ -27,10 +31,24 @@ final kitchenEngineProvider = FutureProvider<KitchenSessionEngine>((ref) async {
   );
 });
 
+/// The open database, closed with the provider.
+final databaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase.open();
+  ref.onDispose(db.close);
+  return db;
+});
+
+/// Overridden in tests with a repository over an in-memory database - or with
+/// null, for widget tests that have no business touching disk.
+final kitchenRepositoryProvider = Provider<KitchenRepository?>(
+  (ref) => KitchenRepository(ref.watch(databaseProvider)),
+);
+
 /// Drives the kitchen. Every transition delegates to the pure engine; this
-/// class only supplies the clock and holds the result.
+/// class only supplies the clock, the store, and holds the result.
 class KitchenSceneController extends AsyncNotifier<KitchenSession> {
   late KitchenSessionEngine _engine;
+  KitchenRepository? _repository;
 
   KitchenSessionEngine get engine => _engine;
 
@@ -39,7 +57,16 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
   @override
   Future<KitchenSession> build() async {
     _engine = await ref.watch(kitchenEngineProvider.future);
-    return _engine.seed(now: _now());
+    _repository = ref.watch(kitchenRepositoryProvider);
+
+    final now = _now();
+    final seeded = _engine.seed(now: now);
+
+    final repository = _repository;
+    if (repository == null) return seeded;
+
+    await repository.ensureSeeded(_engine.tasks, now);
+    return repository.restore(_engine, seeded);
   }
 
   void _apply(KitchenSession Function(KitchenSession) transition) {
@@ -55,7 +82,29 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
 
   void startRun() => _apply((s) => _engine.startRun(s, _now()));
 
-  void completeTask() => _apply((s) => _engine.completeTask(s, _now()));
+  /// DONE.
+  ///
+  /// The state update is synchronous and lands first; the write is fired off
+  /// afterwards and nothing waits on it (CLAUDE.md: DONE -> local state ->
+  /// feedback -> then background work, never DONE -> request -> spinner).
+  void completeTask() {
+    final before = state.valueOrNull;
+    if (before == null || before.phase != RunPhase.running) return;
+
+    final now = _now();
+    final active = _engine.activeElapsed(before, now);
+    final taskId = before.currentTaskId;
+
+    _apply((s) => _engine.completeTask(s, now));
+
+    if (taskId == null) return;
+    final write = _repository?.recordCompletion(
+      taskId: taskId,
+      at: now,
+      actualMinutes: active.inSeconds / 60.0,
+    );
+    if (write != null) unawaited(write);
+  }
 
   void pauseRun() => _apply((s) => _engine.pauseRun(s, _now()));
 

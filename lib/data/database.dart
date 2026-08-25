@@ -30,6 +30,17 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  /// Store timestamps as ISO-8601 text rather than unix seconds.
+  ///
+  /// The integer format drops the UTC flag: a UTC `DateTime` written and read
+  /// back comes out as a *local* one for the same instant. Everything then
+  /// still compares equal by moment but not by value, and the codebase ends
+  /// up quietly mixing the two kinds. Entropy is measured in elapsed hours
+  /// across days-long gaps, so this is not a difference worth carrying.
+  @override
+  DriftDatabaseOptions get options =>
+      const DriftDatabaseOptions(storeDateTimeAsText: true);
+
   @override
   MigrationStrategy get migration => MigrationStrategy(
         beforeOpen: (details) async {
