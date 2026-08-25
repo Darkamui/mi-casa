@@ -57,6 +57,19 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
 
   void completeTask() => _apply((s) => _engine.completeTask(s, _now()));
 
+  void pauseRun() => _apply((s) => _engine.pauseRun(s, _now()));
+
+  void resumeRun() => _apply((s) => _engine.resumeRun(s, _now()));
+
+  void skipTask() => _apply(_engine.skipTask);
+
+  /// Active time on the task in play, read live by the run timer.
+  Duration activeElapsed() {
+    final current = state.valueOrNull;
+    if (current == null) return Duration.zero;
+    return _engine.activeElapsed(current, _now());
+  }
+
   void finishCelebration() => _apply(_engine.finishCelebration);
 
   void acceptCombo() => _apply((s) => _engine.acceptCombo(s, _now()));

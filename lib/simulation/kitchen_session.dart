@@ -32,6 +32,9 @@ class KitchenSession {
     required this.completedThisRun,
     required this.taskStartedAt,
     required this.momentum,
+    this.pausedAt,
+    this.activeBeforePause = Duration.zero,
+    this.runActive = Duration.zero,
   });
 
   final RunPhase phase;
@@ -52,10 +55,28 @@ class KitchenSession {
   /// suggesting something already done.
   final Set<String> completedThisRun;
 
+  /// When the *current active segment* began - not when the task was first
+  /// opened. Pausing and resuming restarts it.
   final DateTime? taskStartedAt;
 
   /// In-session chain length. Spec §5.2 item 10: never a daily streak.
   final int momentum;
+
+  /// Non-null while paused. A paused run is stopped, not slowed: no time
+  /// accrues, so walking away mid-task cannot inflate what the app believes
+  /// the user did.
+  final DateTime? pausedAt;
+
+  /// Active time already banked on the current task, across earlier segments.
+  final Duration activeBeforePause;
+
+  /// Active time banked by tasks already finished in this run.
+  ///
+  /// Spec §2.4: "Reward time spent in motion, not checkboxes ticked. A run's
+  /// value scales with elapsed active time, not task count." This is the
+  /// number that sentence is about, so it has to be tracked honestly even
+  /// though nothing spends it yet.
+  final Duration runActive;
 
   KitchenSession copyWith({
     RunPhase? phase,
@@ -66,9 +87,13 @@ class KitchenSession {
     Set<String>? completedThisRun,
     DateTime? taskStartedAt,
     int? momentum,
+    DateTime? pausedAt,
+    Duration? activeBeforePause,
+    Duration? runActive,
     bool clearCurrentTask = false,
     bool clearComboOffer = false,
     bool clearTaskStartedAt = false,
+    bool clearPausedAt = false,
   }) {
     return KitchenSession(
       phase: phase ?? this.phase,
@@ -80,8 +105,13 @@ class KitchenSession {
       taskStartedAt:
           clearTaskStartedAt ? null : taskStartedAt ?? this.taskStartedAt,
       momentum: momentum ?? this.momentum,
+      pausedAt: clearPausedAt ? null : pausedAt ?? this.pausedAt,
+      activeBeforePause: activeBeforePause ?? this.activeBeforePause,
+      runActive: runActive ?? this.runActive,
     );
   }
+
+  bool get isPaused => pausedAt != null;
 }
 
 /// Pure rules over [KitchenSession].
@@ -205,7 +235,59 @@ class KitchenSessionEngine {
 
   KitchenSession startRun(KitchenSession session, DateTime now) {
     if (session.phase != RunPhase.questOffered) return session;
-    return session.copyWith(phase: RunPhase.running, taskStartedAt: now);
+    return session.copyWith(
+      phase: RunPhase.running,
+      taskStartedAt: now,
+      activeBeforePause: Duration.zero,
+      runActive: Duration.zero,
+      clearPausedAt: true,
+    );
+  }
+
+  /// Time actually spent in motion on the current task.
+  ///
+  /// The timer reads from this rather than from wall-clock elapsed, so a
+  /// paused run genuinely stops. Spec §2.4 makes time the honest signal;
+  /// a clock that keeps running while the phone is face-down on the sofa
+  /// would make it a dishonest one.
+  Duration activeElapsed(KitchenSession session, DateTime now) {
+    final startedAt = session.taskStartedAt;
+    if (startedAt == null || session.isPaused) return session.activeBeforePause;
+    final segment = now.difference(startedAt);
+    return session.activeBeforePause +
+        (segment.isNegative ? Duration.zero : segment);
+  }
+
+  /// Active time across the whole run, including the task in play.
+  Duration runElapsed(KitchenSession session, DateTime now) =>
+      session.runActive + activeElapsed(session, now);
+
+  KitchenSession pauseRun(KitchenSession session, DateTime now) {
+    if (session.phase != RunPhase.running || session.isPaused) return session;
+    return session.copyWith(
+      pausedAt: now,
+      activeBeforePause: activeElapsed(session, now),
+      clearTaskStartedAt: true,
+    );
+  }
+
+  KitchenSession resumeRun(KitchenSession session, DateTime now) {
+    if (session.phase != RunPhase.running || !session.isPaused) return session;
+    return session.copyWith(taskStartedAt: now, clearPausedAt: true);
+  }
+
+  /// Spec §3.7: leaving a task carries no penalty and grants no reward. The
+  /// completion is not recorded, so the estimate learns nothing from it - an
+  /// abandoned task is not evidence about how long the task takes.
+  KitchenSession skipTask(KitchenSession session) {
+    if (session.phase != RunPhase.running) return session;
+    return session.copyWith(
+      phase: session.momentum > 0 ? RunPhase.restored : RunPhase.idle,
+      clearCurrentTask: true,
+      clearTaskStartedAt: true,
+      clearPausedAt: true,
+      activeBeforePause: Duration.zero,
+    );
   }
 
   /// DONE. Records the completion, learns from how long it really took, and
@@ -215,8 +297,10 @@ class KitchenSessionEngine {
     final taskId = session.currentTaskId;
     if (taskId == null) return session;
 
-    final startedAt = session.taskStartedAt ?? now;
-    final actualMinutes = now.difference(startedAt).inSeconds / 60.0;
+    // Learn from time in motion, not from wall clock: a task someone paused
+    // for an hour did not take an hour.
+    final active = activeElapsed(session, now);
+    final actualMinutes = active.inSeconds / 60.0;
 
     return session.copyWith(
       phase: RunPhase.celebrating,
@@ -230,7 +314,10 @@ class KitchenSessionEngine {
       },
       completedThisRun: {...session.completedThisRun, taskId},
       momentum: session.momentum + 1,
+      runActive: session.runActive + active,
+      activeBeforePause: Duration.zero,
       clearTaskStartedAt: true,
+      clearPausedAt: true,
     );
   }
 
@@ -263,7 +350,10 @@ class KitchenSessionEngine {
       phase: RunPhase.running,
       currentTaskId: offer.toTaskId,
       taskStartedAt: now,
+      // A new task's clock starts at zero; the run's total keeps counting.
+      activeBeforePause: Duration.zero,
       clearComboOffer: true,
+      clearPausedAt: true,
     );
   }
 

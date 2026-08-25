@@ -130,7 +130,13 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
         if (state.phase == RunPhase.running && currentTask != null)
           SingleTaskPrompt(
             label: currentTask.label,
+            targetMinutes: engine.offeredMinutes(state, currentTask.id),
+            elapsed: controller.activeElapsed,
+            paused: state.isPaused,
             onDone: controller.completeTask,
+            onPause: controller.pauseRun,
+            onResume: controller.resumeRun,
+            onSkip: controller.skipTask,
           ),
       ],
     );

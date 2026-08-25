@@ -204,6 +204,120 @@ void main() {
     });
   });
 
+  group('the run timer (spec items 7-8)', () {
+    KitchenSession runningOn(KitchenSessionEngine engine) {
+      var session = engine.seed(now: _t0);
+      session = engine.offerQuest(session, 'kitchen.dishes');
+      return engine.startRun(session, _t0);
+    }
+
+    test('time accrues while the run is going', () {
+      final engine = _engine();
+      final session = runningOn(engine);
+
+      expect(engine.activeElapsed(session, _t0), Duration.zero);
+      expect(engine.activeElapsed(session, _t0.add(const Duration(minutes: 3))),
+          const Duration(minutes: 3));
+    });
+
+    test('a paused run stops the clock rather than slowing it', () {
+      final engine = _engine();
+      var session = runningOn(engine);
+
+      session = engine.pauseRun(session, _t0.add(const Duration(minutes: 2)));
+
+      // An hour on the sofa must not read as an hour of work.
+      expect(engine.activeElapsed(session, _t0.add(const Duration(hours: 1))),
+          const Duration(minutes: 2));
+    });
+
+    test('resuming picks up where it stopped, not where the clock is', () {
+      final engine = _engine();
+      var session = runningOn(engine);
+
+      session = engine.pauseRun(session, _t0.add(const Duration(minutes: 2)));
+      session = engine.resumeRun(session, _t0.add(const Duration(hours: 1)));
+
+      expect(
+        engine.activeElapsed(
+            session, _t0.add(const Duration(hours: 1, minutes: 1))),
+        const Duration(minutes: 3),
+      );
+    });
+
+    test('paused time never reaches the estimate the app learns from', () {
+      final engine = _engine();
+      var session = runningOn(engine);
+      final before = engine.offeredMinutes(session, 'kitchen.dishes');
+
+      session = engine.pauseRun(session, _t0.add(const Duration(minutes: 2)));
+      session = engine.resumeRun(session, _t0.add(const Duration(hours: 4)));
+      session =
+          engine.completeTask(session, _t0.add(const Duration(hours: 4)));
+
+      // Two minutes of work either side of a four-hour gap: the estimate may
+      // drift a little, but nothing here justifies a jump toward 4 hours.
+      expect(engine.offeredMinutes(session, 'kitchen.dishes'),
+          lessThan(before + 1));
+    });
+
+    test('run time accumulates across a chain, task time does not', () {
+      final engine = _engine();
+      var session = runningOn(engine);
+
+      session = engine.completeTask(session, _t0.add(const Duration(minutes: 4)));
+      session = engine.finishCelebration(session);
+      final resumedAt = _t0.add(const Duration(minutes: 5));
+      session = engine.acceptCombo(session, resumedAt);
+
+      final now = resumedAt.add(const Duration(minutes: 2));
+      expect(engine.activeElapsed(session, now), const Duration(minutes: 2),
+          reason: 'the new task starts its own clock at zero');
+      expect(engine.runElapsed(session, now), const Duration(minutes: 6),
+          reason: 'the run keeps its total - that is what gets rewarded');
+    });
+
+    test('skipping costs nothing and earns nothing', () {
+      final engine = _engine();
+      var session = runningOn(engine);
+      final before = engine.offeredMinutes(session, 'kitchen.dishes');
+      final lastDone = session.lastCompletedAt['kitchen.dishes'];
+
+      session = engine.skipTask(session);
+
+      expect(session.phase, RunPhase.idle);
+      expect(session.momentum, 0);
+      expect(session.lastCompletedAt['kitchen.dishes'], lastDone,
+          reason: 'a skipped task was not done');
+      expect(engine.offeredMinutes(session, 'kitchen.dishes'), before,
+          reason: 'abandoning is not evidence about how long the task takes');
+    });
+
+    test('skipping mid-chain keeps the work already finished', () {
+      final engine = _engine();
+      var session = runningOn(engine);
+
+      session = engine.completeTask(session, _t0.add(const Duration(minutes: 2)));
+      session = engine.finishCelebration(session);
+      session = engine.acceptCombo(session, _t0);
+      session = engine.skipTask(session);
+
+      expect(session.phase, RunPhase.restored,
+          reason: 'ending on a completion is a win, not a return to idle');
+      expect(session.lastCompletedAt['kitchen.dishes'],
+          _t0.add(const Duration(minutes: 2)));
+    });
+
+    test('pause and resume are ignored outside a live run', () {
+      final engine = _engine();
+      final idle = engine.seed(now: _t0);
+
+      expect(engine.pauseRun(idle, _t0).isPaused, isFalse);
+      expect(engine.resumeRun(idle, _t0).phase, RunPhase.idle);
+      expect(engine.skipTask(idle).phase, RunPhase.idle);
+    });
+  });
+
   group('adaptive duration (spec item 13)', () {
     test('an estimate moves toward how long it actually took', () {
       final engine = _engine();
