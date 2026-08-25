@@ -64,7 +64,7 @@ void main() {
 
     // Tap dead centre of the sink hotspot - exactly where the glow sits.
     final size = tester.getSize(find.byType(KitchenRoomView));
-    final frame = coverFrame(size, 1.59879);
+    final frame = roomFrame(size, 1.59879);
     final origin = tester.getCenter(find.byType(KitchenRoomView));
     final rect = RoomDefinition.parse(_source).hotspotById('sink')!.resolve(frame);
     await tester.tapAt(
@@ -72,6 +72,33 @@ void main() {
     );
 
     expect(tapped?.id, 'sink');
+  });
+
+  testWidgets('every hotspot is reachable on a phone held upright',
+      (tester) async {
+    // 1440x3120 at 3x. Covering a 1.6:1 painting here kept under a third of
+    // its width, which put the bin (x 0.03) and the back counter (x 1.0)
+    // outside the screen with no way to reach them.
+    tester.view.physicalSize = const Size(1440, 3120);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final tapped = <String>[];
+    await tester.pumpWidget(_view(onTap: (h) => tapped.add(h.id)));
+    await tester.pump();
+
+    final screen = tester.getRect(find.byType(KitchenRoomView));
+    final frame = roomFrame(screen.size, 1.59879);
+    final origin = screen.center - Offset(frame.width / 2, frame.height / 2);
+
+    for (final hotspot in RoomDefinition.parse(_source).hotspots) {
+      final at = origin + hotspot.resolve(frame).center;
+      expect(screen.contains(at), isTrue,
+          reason: '${hotspot.id} is off-screen at $at');
+      await tester.tapAt(at);
+    }
+
+    expect(tapped, ['sink', 'island', 'floor']);
   });
 
   testWidgets('a quiet room celebrates nothing', (tester) async {
@@ -93,7 +120,7 @@ void main() {
     await tester.pump();
 
     final size = tester.getSize(find.byType(KitchenRoomView));
-    final frame = coverFrame(size, 1.59879);
+    final frame = roomFrame(size, 1.59879);
     final origin = tester.getCenter(find.byType(KitchenRoomView));
     final expected = origin -
         Offset(frame.width / 2, frame.height / 2) +

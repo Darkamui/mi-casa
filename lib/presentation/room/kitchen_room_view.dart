@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -70,79 +71,124 @@ class KitchenRoomView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Fill the window rather than letterbox it, and never distort: the
-        // frame is the smallest box of the painting's aspect ratio that
-        // covers the viewport, centred and clipped. Hotspots and overlays
-        // resolve against that same frame, so they stay locked to the art
-        // whatever gets cropped.
-        final frame = coverFrame(constraints.biggest, room.aspectRatio);
+        // Fill the window rather than letterbox it - up to the point where
+        // filling it would start hiding the room. See [roomFrame]. Hotspots
+        // and overlays resolve against this frame, so they stay locked to
+        // the art at every size.
+        final viewport = constraints.biggest;
+        final frame = roomFrame(viewport, room.aspectRatio);
+        final framed = frame.width < viewport.width - 0.5 ||
+            frame.height < viewport.height - 0.5;
 
         return ClipRect(
-          child: Center(
-            child: OverflowBox(
-              maxWidth: frame.width,
-              maxHeight: frame.height,
-              child: SizedBox(
-                width: frame.width,
-                height: frame.height,
-                child: Stack(
-                  clipBehavior: Clip.hardEdge,
-                  children: [
-                    // The painting and its props take the vitality filter.
-                    // The affordances and the companion deliberately do not
-                    // - a neglected room must still be legible to tap.
-                    // The colour comes back over a beat rather than snapping.
-                    // Spec §4.1 - the transformation *is* the reward, and a
-                    // reward that has already happened by the time the eye
-                    // arrives was never seen.
-                    Positioned.fill(
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(
-                          begin: treatment.saturation,
-                          end: treatment.saturation,
-                        ),
-                        duration: const Duration(milliseconds: 1400),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, saturation, child) => ColorFiltered(
-                          colorFilter: saturationFilter(saturation),
-                          child: child,
-                        ),
-                        child: Stack(
-                          clipBehavior: Clip.hardEdge,
-                          children: [
-                            Positioned.fill(
-                              child:
-                                  Image.asset(room.baseAsset, fit: BoxFit.cover),
-                            ),
-                            if (showDishPile)
-                              _overlay(room.overlayById('dish_pile'), frame),
-                            // Ambient wash: warm when cared for, cool when
-                            // neglected (doc §7).
-                            Positioned.fill(
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 1400),
-                                curve: Curves.easeOutCubic,
-                                color: treatment.ambientTint
-                                    .withValues(alpha: treatment.tintStrength),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (celebration != null) _bloom(),
-                    _companion(frame, treatment),
-                    ..._hotspots(frame),
-                    if (celebration != null) _burst(celebration!, frame),
-                  ],
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Whatever the painting does not reach is filled with the
+              // painting itself, blurred back until it reads as the room's
+              // own light rather than as empty screen.
+              if (framed) _backdrop(treatment),
+              OverflowBox(
+                // The stack hands down tight constraints; without these the
+                // frame cannot be smaller than the screen it sits in.
+                minWidth: 0,
+                minHeight: 0,
+                maxWidth: frame.width,
+                maxHeight: frame.height,
+                child: SizedBox(
+                  width: frame.width,
+                  height: frame.height,
+                  child: _scene(frame, treatment),
                 ),
               ),
-            ),
+            ],
           ),
         );
       },
     );
   }
+
+  Widget _scene(Size frame, VitalityTreatment treatment) => Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          // The painting and its props take the vitality filter. The
+          // affordances and the companion deliberately do not - a neglected
+          // room must still be legible to tap. The colour comes back over a
+          // beat rather than snapping. Spec §4.1 - the transformation *is*
+          // the reward, and a reward that has already happened by the time
+          // the eye arrives was never seen.
+          Positioned.fill(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(
+                begin: treatment.saturation,
+                end: treatment.saturation,
+              ),
+              duration: const Duration(milliseconds: 1400),
+              curve: Curves.easeOutCubic,
+              builder: (context, saturation, child) => ColorFiltered(
+                colorFilter: saturationFilter(saturation),
+                child: child,
+              ),
+              child: Stack(
+                clipBehavior: Clip.hardEdge,
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(room.baseAsset, fit: BoxFit.cover),
+                  ),
+                  if (showDishPile)
+                    _overlay(room.overlayById('dish_pile'), frame),
+                  // Ambient wash: warm when cared for, cool when neglected
+                  // (doc §7).
+                  Positioned.fill(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 1400),
+                      curve: Curves.easeOutCubic,
+                      color: treatment.ambientTint
+                          .withValues(alpha: treatment.tintStrength),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (celebration != null) _bloom(),
+          _companion(frame, treatment),
+          ..._hotspots(frame),
+          if (celebration != null) _burst(celebration!, frame),
+        ],
+      );
+
+  /// The painting again, blurred and dimmed, filling whatever the framed
+  /// room leaves over.
+  ///
+  /// On a tall phone a 1.6:1 painting cannot fill the screen without most of
+  /// it being cropped away (see [roomFrame]), so it is shown whole and the
+  /// leftover space is lit by the room itself. It is the same illustration,
+  /// not a second asset and not a composed background - direction doc §1.
+  Widget _backdrop(VitalityTreatment treatment) => IgnorePointer(
+        // Isolated: nothing here changes while the room animates, and a
+        // full-screen blur is not something to re-rasterise every frame.
+        child: RepaintBoundary(
+          child: ColorFiltered(
+            colorFilter: saturationFilter(treatment.saturation),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: 34,
+                    sigmaY: 34,
+                    tileMode: TileMode.clamp,
+                  ),
+                  child: Image.asset(room.baseAsset, fit: BoxFit.cover),
+                ),
+                // Pushed well back so the framed painting stays the subject.
+                const ColoredBox(color: Color(0xB315131A)),
+              ],
+            ),
+          ),
+        ),
+      );
 
   Widget _overlay(RoomOverlay? overlay, Size frame) {
     if (overlay == null) return const SizedBox.shrink();
@@ -183,7 +229,9 @@ class KitchenRoomView extends StatelessWidget {
       );
 
   Widget _burst(RoomCelebration celebration, Size frame) {
-    const size = 220.0;
+    // Proportional to the painting, like the companion: a burst sized in
+    // fixed pixels swamps the room once the frame shrinks to fit a phone.
+    final size = (frame.width * 0.14).clamp(96.0, 260.0);
     return Positioned(
       left: celebration.spot.x * frame.width - size / 2,
       top: celebration.spot.y * frame.height - size / 2,
@@ -398,10 +446,36 @@ class _AffordancePainter extends CustomPainter {
   bool shouldRepaint(_AffordancePainter oldDelegate) => oldDelegate.t != t;
 }
 
-/// Smallest box of [aspectRatio] that fully covers [available].
+/// How much of the painting may be cropped away to fill the screen.
 ///
-/// Cover, not contain: letterbox bars framed the painting like a video and
-/// broke the illusion that you are looking into a room.
+/// Tuned against the kitchen's own hotspots: the bin sits at x 0.03 and the
+/// back counter runs to x 1.0, so anything past a quarter starts eating
+/// tappable room rather than margin.
+const _maxCrop = 0.25;
+
+/// Where the painting sits inside [available].
+///
+/// Cover while the crop stays small - letterbox bars around a nearly
+/// matching window frame the painting like a video and break the illusion
+/// that you are looking into a room. But cover has a cliff: a 1.6:1 painting
+/// on a 19.5:9 phone held upright keeps under a third of its width, which
+/// reads as an aggressive zoom into a corner of the kitchen and puts two of
+/// the four hotspots off-screen entirely.
+///
+/// So past [_maxCrop] the rule flips and the whole painting is shown. What
+/// it does not cover is filled by the room's own blurred light rather than
+/// by bars.
+Size roomFrame(Size available, double aspectRatio) {
+  final cover = coverFrame(available, aspectRatio);
+  final crop = math.max(
+    1 - available.width / cover.width,
+    1 - available.height / cover.height,
+  );
+  if (crop <= _maxCrop) return cover;
+  return containFrame(available, aspectRatio);
+}
+
+/// Smallest box of [aspectRatio] that fully covers [available].
 Size coverFrame(Size available, double aspectRatio) {
   final width = available.width;
   final height = available.height;
@@ -410,4 +484,14 @@ Size coverFrame(Size available, double aspectRatio) {
     return Size(width, width / aspectRatio);
   }
   return Size(height * aspectRatio, height);
+}
+
+/// Largest box of [aspectRatio] that fits inside [available].
+Size containFrame(Size available, double aspectRatio) {
+  final width = available.width;
+  final height = available.height;
+  if (width / height > aspectRatio) {
+    return Size(height * aspectRatio, height);
+  }
+  return Size(width, width / aspectRatio);
 }
