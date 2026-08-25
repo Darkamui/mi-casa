@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../feedback/haptic_score.dart';
+import '../feedback/haptics.dart';
 import '../room/kitchen_room_view.dart';
 import '../room/room_definition.dart';
 import '../room/room_definition_loader.dart';
@@ -47,6 +49,10 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
   /// the user has to keep swatting away.
   bool _showPhotos = false;
 
+  static const _score = HapticScore();
+
+  Haptics get _haptics => ref.read(hapticsProvider);
+
   @override
   void dispose() {
     _restoredTimer?.cancel();
@@ -68,7 +74,13 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
       final phase = next.valueOrNull?.phase;
       if (previous?.valueOrNull?.phase == phase) return;
 
+      if (phase == RunPhase.comboOffered) {
+        _haptics.play(HapticCue.combo);
+        return;
+      }
+
       if (phase == RunPhase.restored) {
+        _haptics.play(HapticCue.roomRestored);
         setState(() {
           _showRestored = true;
           // Only when there is a "before" to compare against - §2.4's
@@ -88,7 +100,12 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
 
       // Feedback never waits on I/O (CLAUDE.md): state is already updated,
       // so haptic, sound and particles fire immediately.
-      HapticFeedback.mediumImpact();
+      final momentum = next.valueOrNull?.momentum ?? 0;
+      _haptics.play(
+        _score.isMilestone(momentum)
+            ? HapticCue.momentumMilestone
+            : HapticCue.taskComplete,
+      );
       SystemSound.play(SystemSoundType.click);
 
       final spot = _spotFor(

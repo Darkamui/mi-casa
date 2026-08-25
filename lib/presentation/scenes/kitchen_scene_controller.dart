@@ -9,6 +9,7 @@ import '../../simulation/combo_engine.dart';
 import '../../simulation/content_loader.dart';
 import '../../simulation/kitchen_session.dart';
 import '../../simulation/voice_grammar.dart';
+import '../feedback/haptics.dart';
 import '../photos/camera_photo_store.dart';
 import '../photos/photo_store.dart';
 import '../voice/voice_recognizer.dart';
@@ -58,6 +59,14 @@ final voiceRecognizerProvider =
 /// The camera behind the optional before/after pair (spec §2.4). Local-only -
 /// see [PhotoStore] for the constraint that shape is protecting.
 final photoStoreProvider = Provider<PhotoStore>((ref) => CameraPhotoStore());
+
+/// The device's buzz (spec §4.3). Overridden with [SilentHaptics] in tests,
+/// and with a recording double wherever the patterns themselves are checked.
+final hapticsProvider = Provider<Haptics>((ref) {
+  final haptics = SystemHaptics();
+  ref.onDispose(haptics.cancel);
+  return haptics;
+});
 
 /// Whether to offer the photo affordances at all. A device that cannot take
 /// a picture is shown nothing about pictures.
