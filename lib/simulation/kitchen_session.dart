@@ -66,6 +66,8 @@ class KitchenSession {
     this.activeRung,
     this.rejections = const {},
     this.extendedBy = Duration.zero,
+    this.beforePhoto,
+    this.afterPhoto,
   });
 
   final RunPhase phase;
@@ -137,6 +139,22 @@ class KitchenSession {
   /// way to make five minutes of work count as ten.
   final Duration extendedBy;
 
+  /// Where the run's "before" picture lives, if one was taken (spec §2.4).
+  ///
+  /// A local path and nothing more. The simulation deliberately holds no
+  /// image bytes and no notion of where the file came from - it only needs to
+  /// know that a pair exists, so that the end of the run can show it.
+  final String? beforePhoto;
+
+  /// The matching "after", taken once the run is over.
+  final String? afterPhoto;
+
+  /// Whether there is a real two-image comparison to show.
+  ///
+  /// An "after" alone is not the honesty mechanic §2.4 is describing - the
+  /// whole force of it is the pair.
+  bool get hasComparison => beforePhoto != null && afterPhoto != null;
+
   KitchenSession copyWith({
     RunPhase? phase,
     String? currentTaskId,
@@ -153,11 +171,14 @@ class KitchenSession {
     int? activeRung,
     Map<String, int>? rejections,
     Duration? extendedBy,
+    String? beforePhoto,
+    String? afterPhoto,
     bool clearCurrentTask = false,
     bool clearComboOffer = false,
     bool clearTaskStartedAt = false,
     bool clearPausedAt = false,
     bool clearActiveRung = false,
+    bool clearPhotos = false,
   }) {
     return KitchenSession(
       phase: phase ?? this.phase,
@@ -176,6 +197,8 @@ class KitchenSession {
       activeRung: clearActiveRung ? null : activeRung ?? this.activeRung,
       rejections: rejections ?? this.rejections,
       extendedBy: extendedBy ?? this.extendedBy,
+      beforePhoto: clearPhotos ? null : beforePhoto ?? this.beforePhoto,
+      afterPhoto: clearPhotos ? null : afterPhoto ?? this.afterPhoto,
     );
   }
 
@@ -365,6 +388,9 @@ class KitchenSessionEngine {
       extendedBy: Duration.zero,
       clearComboOffer: true,
       clearActiveRung: true,
+      // A new run is a new pair. Last run's photos stop being state the
+      // moment this one opens - see [discardPhotos] for who deletes the file.
+      clearPhotos: true,
     );
   }
 
@@ -661,6 +687,42 @@ class KitchenSessionEngine {
       clearCurrentTask: true,
       clearComboOffer: true,
     );
+  }
+
+  /// The optional "before" picture (spec §2.4).
+  ///
+  /// Only takeable while the offer is still open, which is the only moment
+  /// that makes it true: once the first task is running, the room in the
+  /// photograph is no longer the room before the work. Nothing in the run
+  /// waits on this and nothing is withheld without it - a run with no photos
+  /// plays exactly like a run with them.
+  KitchenSession attachBeforePhoto(KitchenSession session, String path) {
+    if (session.phase != RunPhase.questOffered) return session;
+    return session.copyWith(beforePhoto: path);
+  }
+
+  /// The matching "after", offered once the run is over.
+  ///
+  /// Refused when there is no "before" to compare it against: §2.4 asks for a
+  /// two-image slider, and a lone photograph of a clean kitchen makes none of
+  /// the argument that the pair makes.
+  KitchenSession attachAfterPhoto(KitchenSession session, String path) {
+    if (session.phase != RunPhase.restored) return session;
+    if (session.beforePhoto == null) return session;
+    return session.copyWith(afterPhoto: path);
+  }
+
+  /// Throw the pair away.
+  ///
+  /// §2.4 puts these photos inside someone's home, local-only and never
+  /// shared. Something that personal has to be as easy to destroy as it was
+  /// to take, so this is a first-class transition rather than a settings
+  /// screen. Deleting the files themselves belongs to whoever wrote them.
+  KitchenSession discardPhotos(KitchenSession session) {
+    if (session.beforePhoto == null && session.afterPhoto == null) {
+      return session;
+    }
+    return session.copyWith(clearPhotos: true);
   }
 
   /// "Five more minutes" (spec §2.5). Moves the target, never the clock.

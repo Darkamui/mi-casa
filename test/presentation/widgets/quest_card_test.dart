@@ -90,4 +90,57 @@ void main() {
 
     expect(width, lessThan(screen * 0.6));
   });
+
+  group('the optional before photo (spec 2.4)', () {
+    testWidgets('is offered when the device has a camera', (tester) async {
+      var asked = false;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: QuestCard(onPlay: () {}, onBeforePhoto: () => asked = true),
+        ),
+      ));
+
+      await tester.tap(find.text('SNAP THE BEFORE'));
+      expect(asked, isTrue);
+    });
+
+    testWidgets('is invisible on a device that cannot take one',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: QuestCard(onPlay: () {})),
+      ));
+
+      // Not a disabled button explaining what the user is missing.
+      expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);
+    });
+
+    testWidgets('never stands between the user and PLAY', (tester) async {
+      var played = false;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: QuestCard(onPlay: () => played = true, onBeforePhoto: () {}),
+        ),
+      ));
+
+      // §2.4 makes the photo optional. PLAY works whether it was taken or not.
+      await tester.tap(find.text('PLAY'));
+      expect(played, isTrue);
+    });
+
+    testWidgets('acknowledges one already taken without asking again',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: QuestCard(
+            onPlay: () {},
+            onBeforePhoto: () {},
+            hasBeforePhoto: true,
+          ),
+        ),
+      ));
+
+      expect(find.text('BEFORE TAKEN'), findsOneWidget);
+      expect(find.text('SNAP THE BEFORE'), findsNothing);
+    });
+  });
 }

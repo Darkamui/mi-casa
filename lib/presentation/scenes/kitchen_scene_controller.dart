@@ -9,6 +9,8 @@ import '../../simulation/combo_engine.dart';
 import '../../simulation/content_loader.dart';
 import '../../simulation/kitchen_session.dart';
 import '../../simulation/voice_grammar.dart';
+import '../photos/camera_photo_store.dart';
+import '../photos/photo_store.dart';
 import '../voice/voice_recognizer.dart';
 
 export '../../simulation/kitchen_session.dart'
@@ -53,6 +55,16 @@ final kitchenRepositoryProvider = Provider<KitchenRepository?>(
 final voiceRecognizerProvider =
     Provider<VoiceRecognizer>((ref) => const UnavailableVoiceRecognizer());
 
+/// The camera behind the optional before/after pair (spec §2.4). Local-only -
+/// see [PhotoStore] for the constraint that shape is protecting.
+final photoStoreProvider = Provider<PhotoStore>((ref) => CameraPhotoStore());
+
+/// Whether to offer the photo affordances at all. A device that cannot take
+/// a picture is shown nothing about pictures.
+final cameraAvailableProvider = FutureProvider<bool>(
+  (ref) => ref.watch(photoStoreProvider).available(),
+);
+
 /// Drives the kitchen. Every transition delegates to the pure engine; this
 /// class only supplies the clock, the store, and holds the result.
 class KitchenSceneController extends AsyncNotifier<KitchenSession> {
@@ -81,7 +93,31 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
   void _apply(KitchenSession Function(KitchenSession) transition) {
     final current = state.valueOrNull;
     if (current == null) return;
-    state = AsyncData(transition(current));
+    final next = transition(current);
+    state = AsyncData(next);
+    _sweepPhotos(current, next);
+  }
+
+  /// Delete any photo the transition just stopped referring to.
+  ///
+  /// This lives with the transition rather than with the widget that took the
+  /// picture, because the engine is what decides a pair is over - a new run
+  /// opening, or the user throwing them away. §2.4's "local-only" is only
+  /// true for as long as nothing quietly accumulates a folder of photographs
+  /// of someone's kitchen; forgetting to delete is how that promise rots.
+  ///
+  /// Fired and not awaited, like every other write here (CLAUDE.md).
+  void _sweepPhotos(KitchenSession before, KitchenSession after) {
+    final kept = {after.beforePhoto, after.afterPhoto};
+    final dropped = [before.beforePhoto, before.afterPhoto]
+        .whereType<String>()
+        .where((path) => !kept.contains(path));
+    if (dropped.isEmpty) return;
+
+    final store = ref.read(photoStoreProvider);
+    for (final path in dropped) {
+      unawaited(store.discard(path));
+    }
   }
 
   void offerQuest(String taskId) =>
@@ -161,6 +197,42 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
     // A command that changed nothing did not apply here.
     return identical(state.valueOrNull, before) ? null : intent;
   }
+
+  /// Take the optional "before" (spec §2.4).
+  ///
+  /// Returns false when nothing was taken - no camera, or the user backed
+  /// out. Backing out is not a failure and the caller must not report it as
+  /// one; the run is unaffected either way.
+  Future<bool> captureBeforePhoto() async {
+    final path = await ref.read(photoStoreProvider).capture();
+    if (path == null) return false;
+
+    final before = state.valueOrNull;
+    _apply((s) => _engine.attachBeforePhoto(s, path));
+    // The offer can close while the camera is open. If the engine refused the
+    // photo, the file is ours and nobody is going to look at it.
+    if (identical(state.valueOrNull?.beforePhoto, before?.beforePhoto)) {
+      unawaited(ref.read(photoStoreProvider).discard(path));
+      return false;
+    }
+    return true;
+  }
+
+  Future<bool> captureAfterPhoto() async {
+    final path = await ref.read(photoStoreProvider).capture();
+    if (path == null) return false;
+
+    final before = state.valueOrNull;
+    _apply((s) => _engine.attachAfterPhoto(s, path));
+    if (identical(state.valueOrNull?.afterPhoto, before?.afterPhoto)) {
+      unawaited(ref.read(photoStoreProvider).discard(path));
+      return false;
+    }
+    return true;
+  }
+
+  /// Throw the pair away, files included (see [_sweepPhotos]).
+  void discardPhotos() => _apply(_engine.discardPhotos);
 
   void finishCelebration() => _apply(_engine.finishCelebration);
 

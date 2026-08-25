@@ -11,6 +11,7 @@ import '../room/room_vitality.dart';
 import '../scenes/kitchen_scene_controller.dart';
 import '../widgets/combo_card.dart';
 import '../widgets/not_this_sheet.dart';
+import '../widgets/photo_comparison_sheet.dart';
 import '../widgets/quest_card.dart';
 import '../widgets/room_restored_banner.dart';
 import '../widgets/single_task_prompt.dart';
@@ -41,6 +42,11 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
   /// The five answers of §3.7, open over the quest card.
   bool _showNotThis = false;
 
+  /// The before/after panel (§2.4), open after the ROOM RESTORED card has had
+  /// its moment. Closed for good once dismissed, so it never becomes a thing
+  /// the user has to keep swatting away.
+  bool _showPhotos = false;
+
   @override
   void dispose() {
     _restoredTimer?.cancel();
@@ -63,7 +69,13 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
       if (previous?.valueOrNull?.phase == phase) return;
 
       if (phase == RunPhase.restored) {
-        setState(() => _showRestored = true);
+        setState(() {
+          _showRestored = true;
+          // Only when there is a "before" to compare against - §2.4's
+          // mechanic is the pair, and an unprompted camera at the end of a
+          // run the user never photographed is just an interruption.
+          _showPhotos = next.valueOrNull?.beforePhoto != null;
+        });
         _restoredTimer?.cancel();
         // Long enough to land, short enough that it never becomes a wall
         // between the user and the room.
@@ -116,6 +128,12 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     if (rung == null) return 'KITCHEN RESCUE';
     return rung.setupQuest ? 'GETTING READY' : 'SMALLER';
   }
+
+  /// Whether this device can take a picture (§2.4). Unresolved counts as no:
+  /// the affordance appearing a frame late is invisible, one that appears and
+  /// then does nothing is not.
+  bool _cameraReady() =>
+      ref.watch(cameraAvailableProvider).valueOrNull ?? false;
 
   /// Celebrate where the work happened. Falls back to the middle of the room
   /// only if the task has no painted home.
@@ -193,6 +211,10 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
               onPlay: controller.startRun,
               onDismiss: controller.dismissQuest,
               onNotThis: () => setState(() => _showNotThis = true),
+              onBeforePhoto: _cameraReady()
+                  ? () => unawaited(controller.captureBeforePhoto())
+                  : null,
+              hasBeforePhoto: state.beforePhoto != null,
             ),
           ),
         if (_showNotThis && state.phase == RunPhase.questOffered)
@@ -226,6 +248,24 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
           ),
         if (_showRestored && state.phase == RunPhase.restored)
           RoomRestoredBanner(onDismiss: _dismissRestored),
+        // After the title card, never over it. ROOM RESTORED is the reward
+        // and it does not share the screen.
+        if (!_showRestored &&
+            _showPhotos &&
+            state.phase == RunPhase.restored &&
+            state.beforePhoto != null)
+          PhotoComparisonSheet(
+            beforePath: state.beforePhoto!,
+            afterPath: state.afterPhoto,
+            onDismiss: () => setState(() => _showPhotos = false),
+            onDiscard: () {
+              setState(() => _showPhotos = false);
+              controller.discardPhotos();
+            },
+            onTakeAfter: _cameraReady()
+                ? () => unawaited(controller.captureAfterPhoto())
+                : null,
+          ),
       ],
     );
   }

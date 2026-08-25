@@ -10,6 +10,8 @@ class QuestCard extends StatelessWidget {
     required this.onPlay,
     this.onDismiss,
     this.onNotThis,
+    this.onBeforePhoto,
+    this.hasBeforePhoto = false,
     this.title = 'Kitchen Rescue',
     this.minutes = 2,
     this.eyebrow = 'KITCHEN RESCUE',
@@ -24,6 +26,14 @@ class QuestCard extends StatelessWidget {
   /// Opens the five answers of spec §3.7. Distinct from [onDismiss]: closing
   /// the card is "not now", NOT THIS is "not this one".
   final VoidCallback? onNotThis;
+
+  /// Takes the optional "before" (spec §2.4). Null on a device with no camera
+  /// we can reach, and then nothing about photos is drawn at all.
+  final VoidCallback? onBeforePhoto;
+
+  /// Whether one has already been taken - the only acknowledgement it gets.
+  /// A thumbnail here would turn an aside into a step.
+  final bool hasBeforePhoto;
 
   final String title;
   final double minutes;
@@ -67,6 +77,27 @@ class QuestCard extends StatelessWidget {
                   style:
                       const TextStyle(color: Color(0xFF9A9AA6), fontSize: 14),
                 ),
+                if (onBeforePhoto != null) ...[
+                  const SizedBox(height: 10),
+                  // Quiet, and above PLAY because that is the only order in
+                  // which it makes sense. It is never a step: PLAY works the
+                  // same whether this was tapped or ignored (§2.4, optional).
+                  TextButton.icon(
+                    onPressed: hasBeforePhoto ? null : onBeforePhoto,
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF9A9AA6),
+                      disabledForegroundColor: const Color(0xFFA9C7A0),
+                    ),
+                    icon: Icon(
+                      hasBeforePhoto ? Icons.check : Icons.photo_camera_outlined,
+                      size: 16,
+                    ),
+                    label: Text(
+                      hasBeforePhoto ? 'BEFORE TAKEN' : 'SNAP THE BEFORE',
+                      style: const TextStyle(fontSize: 11, letterSpacing: 1.5),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 ElevatedButton(onPressed: onPlay, child: const Text('PLAY')),
                 if (onNotThis != null)
