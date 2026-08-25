@@ -247,8 +247,9 @@ class KitchenRoomView extends StatelessWidget {
   Widget _companion(Size frame, VitalityTreatment treatment) {
     final mood = companionMood ?? treatment.companionMood;
     // Sized as a fraction of the frame so it stays in proportion with the
-    // painted furniture at every window size.
-    final height = frame.height * 0.26;
+    // painted furniture at every window size. The fraction itself belongs to
+    // the room, not to this widget - see [RoomDefinition.companionHeight].
+    final height = frame.height * room.companionHeight;
     return Positioned(
       left: room.companionSpot.x * frame.width - height * 0.5,
       top: room.companionSpot.y * frame.height - height,

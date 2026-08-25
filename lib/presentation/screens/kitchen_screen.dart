@@ -91,8 +91,10 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
         _restoredTimer?.cancel();
         // Long enough to land, short enough that it never becomes a wall
         // between the user and the room.
-        _restoredTimer =
-            Timer(const Duration(milliseconds: 2600), _dismissRestored);
+        _restoredTimer = Timer(
+          const Duration(milliseconds: 2600),
+          _dismissRestored,
+        );
         return;
       }
 
@@ -108,14 +110,10 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
       );
       SystemSound.play(SystemSoundType.click);
 
-      final spot = _spotFor(
-        room.valueOrNull,
-        next.valueOrNull?.currentTaskId,
-      );
+      final spot = _spotFor(room.valueOrNull, next.valueOrNull?.currentTaskId);
       setState(() {
         _celebrationCount++;
-        _celebration =
-            RoomCelebration(id: _celebrationCount, spot: spot);
+        _celebration = RoomCelebration(id: _celebrationCount, spot: spot);
       });
 
       Future.delayed(const Duration(milliseconds: 900), () {
@@ -128,8 +126,8 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF1E1B22),
       body: switch ((room, session)) {
-        (AsyncError(:final error), _) || (_, AsyncError(:final error)) =>
-          _error(error),
+        (AsyncError(:final error), _) ||
+        (_, AsyncError(:final error)) => _error(error),
         (AsyncData(value: final definition), AsyncData(value: final state)) =>
           _room(definition, state, controller),
         _ => const Center(child: CircularProgressIndicator()),
@@ -155,20 +153,21 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
   /// Celebrate where the work happened. Falls back to the middle of the room
   /// only if the task has no painted home.
   ({double x, double y}) _spotFor(RoomDefinition? definition, String? taskId) {
-    final hotspot =
-        taskId == null ? null : definition?.hotspotForTask(taskId);
+    final hotspot = taskId == null ? null : definition?.hotspotForTask(taskId);
     if (hotspot == null) return (x: 0.5, y: 0.5);
     return (x: hotspot.area.center.dx, y: hotspot.area.center.dy);
   }
 
   Widget _error(Object error) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Could not load the kitchen.\n$error',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70)),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Text(
+        'Could not load the kitchen.\n$error',
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white70),
+      ),
+    ),
+  );
 
   Widget _room(
     RoomDefinition definition,
@@ -185,105 +184,113 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
         ? null
         : engine.taskById(state.currentTaskId!);
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: KitchenRoomView(
-            room: definition,
-            vitality: vitality,
-            showDishPile: engine.showsDishPile(state, now),
-            showAffordances:
-                state.phase == RunPhase.idle || state.phase == RunPhase.restored,
-            celebration: _celebration,
-            companionMood: switch (state.phase) {
-              RunPhase.celebrating => CompanionMood.excited,
-              RunPhase.comboOffered => CompanionMood.happy,
-              RunPhase.restored => CompanionMood.happy,
-              RunPhase.questOffered => CompanionMood.thinking,
-              _ => null,
-            },
-            onCompanionTap: () => _offerMostNeeded(state, controller),
-            onHotspotTap: (hotspot) => controller.offerQuest(hotspot.taskId),
-          ),
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                VitalityHud(vitality: vitality, momentum: state.momentum),
-                const Spacer(),
-                const VoiceButton(),
-              ],
+    // Expanded deliberately. Scaffold hands its body *loose* constraints, and
+    // a loose Stack shrinks to its largest non-positioned child - which here
+    // is the HUD row. That collapsed the room to a band the height of the
+    // vitality chip at the top of the screen, and made it snap to full size
+    // the moment a centred card appeared, which read as a violent zoom.
+    return SizedBox.expand(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: KitchenRoomView(
+              room: definition,
+              vitality: vitality,
+              showDishPile: engine.showsDishPile(state, now),
+              showAffordances:
+                  state.phase == RunPhase.idle ||
+                  state.phase == RunPhase.restored,
+              celebration: _celebration,
+              companionMood: switch (state.phase) {
+                RunPhase.celebrating => CompanionMood.excited,
+                RunPhase.comboOffered => CompanionMood.happy,
+                RunPhase.restored => CompanionMood.happy,
+                RunPhase.questOffered => CompanionMood.thinking,
+                _ => null,
+              },
+              onCompanionTap: () => _offerMostNeeded(state, controller),
+              onHotspotTap: (hotspot) => controller.offerQuest(hotspot.taskId),
             ),
           ),
-        ),
-        if (state.phase == RunPhase.questOffered && currentTask != null)
-          Center(
-            child: QuestCard(
-              title: engine.currentLabel(state) ?? currentTask.label,
-              minutes: engine.currentMinutes(state),
-              eyebrow: _eyebrowFor(state, engine),
-              onPlay: controller.startRun,
-              onDismiss: controller.dismissQuest,
-              onNotThis: () => setState(() => _showNotThis = true),
-              onBeforePhoto: _cameraReady()
-                  ? () => unawaited(controller.captureBeforePhoto())
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  VitalityHud(vitality: vitality, momentum: state.momentum),
+                  const Spacer(),
+                  const VoiceButton(),
+                ],
+              ),
+            ),
+          ),
+          if (state.phase == RunPhase.questOffered && currentTask != null)
+            Center(
+              child: QuestCard(
+                title: engine.currentLabel(state) ?? currentTask.label,
+                minutes: engine.currentMinutes(state),
+                eyebrow: _eyebrowFor(state, engine),
+                onPlay: controller.startRun,
+                onDismiss: controller.dismissQuest,
+                onNotThis: () => setState(() => _showNotThis = true),
+                onBeforePhoto: _cameraReady()
+                    ? () => unawaited(controller.captureBeforePhoto())
+                    : null,
+                hasBeforePhoto: state.beforePhoto != null,
+              ),
+            ),
+          if (_showNotThis && state.phase == RunPhase.questOffered)
+            NotThisSheet(
+              onDismiss: () => setState(() => _showNotThis = false),
+              onChoose: (reason) {
+                setState(() => _showNotThis = false);
+                controller.notThis(reason);
+              },
+            ),
+          if (state.phase == RunPhase.comboOffered && state.comboOffer != null)
+            Center(
+              child: ComboCard(
+                prompt: state.comboOffer!.prompt,
+                minutes: state.comboOffer!.estimatedMinutes,
+                momentum: state.momentum,
+                onAccept: controller.acceptCombo,
+                onDecline: controller.declineCombo,
+              ),
+            ),
+          if (state.phase == RunPhase.running && currentTask != null)
+            SingleTaskPrompt(
+              label: engine.currentLabel(state) ?? currentTask.label,
+              targetMinutes: engine.currentMinutes(state),
+              elapsed: controller.activeElapsed,
+              paused: state.isPaused,
+              onDone: controller.completeTask,
+              onPause: controller.pauseRun,
+              onResume: controller.resumeRun,
+              onSkip: controller.skipTask,
+            ),
+          if (_showRestored && state.phase == RunPhase.restored)
+            RoomRestoredBanner(onDismiss: _dismissRestored),
+          // After the title card, never over it. ROOM RESTORED is the reward
+          // and it does not share the screen.
+          if (!_showRestored &&
+              _showPhotos &&
+              state.phase == RunPhase.restored &&
+              state.beforePhoto != null)
+            PhotoComparisonSheet(
+              beforePath: state.beforePhoto!,
+              afterPath: state.afterPhoto,
+              onDismiss: () => setState(() => _showPhotos = false),
+              onDiscard: () {
+                setState(() => _showPhotos = false);
+                controller.discardPhotos();
+              },
+              onTakeAfter: _cameraReady()
+                  ? () => unawaited(controller.captureAfterPhoto())
                   : null,
-              hasBeforePhoto: state.beforePhoto != null,
             ),
-          ),
-        if (_showNotThis && state.phase == RunPhase.questOffered)
-          NotThisSheet(
-            onDismiss: () => setState(() => _showNotThis = false),
-            onChoose: (reason) {
-              setState(() => _showNotThis = false);
-              controller.notThis(reason);
-            },
-          ),
-        if (state.phase == RunPhase.comboOffered && state.comboOffer != null)
-          Center(
-            child: ComboCard(
-              prompt: state.comboOffer!.prompt,
-              minutes: state.comboOffer!.estimatedMinutes,
-              momentum: state.momentum,
-              onAccept: controller.acceptCombo,
-              onDecline: controller.declineCombo,
-            ),
-          ),
-        if (state.phase == RunPhase.running && currentTask != null)
-          SingleTaskPrompt(
-            label: engine.currentLabel(state) ?? currentTask.label,
-            targetMinutes: engine.currentMinutes(state),
-            elapsed: controller.activeElapsed,
-            paused: state.isPaused,
-            onDone: controller.completeTask,
-            onPause: controller.pauseRun,
-            onResume: controller.resumeRun,
-            onSkip: controller.skipTask,
-          ),
-        if (_showRestored && state.phase == RunPhase.restored)
-          RoomRestoredBanner(onDismiss: _dismissRestored),
-        // After the title card, never over it. ROOM RESTORED is the reward
-        // and it does not share the screen.
-        if (!_showRestored &&
-            _showPhotos &&
-            state.phase == RunPhase.restored &&
-            state.beforePhoto != null)
-          PhotoComparisonSheet(
-            beforePath: state.beforePhoto!,
-            afterPath: state.afterPhoto,
-            onDismiss: () => setState(() => _showPhotos = false),
-            onDiscard: () {
-              setState(() => _showPhotos = false);
-              controller.discardPhotos();
-            },
-            onTakeAfter: _cameraReady()
-                ? () => unawaited(controller.captureAfterPhoto())
-                : null,
-          ),
-      ],
+        ],
+      ),
     );
   }
 

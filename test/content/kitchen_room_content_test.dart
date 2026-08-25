@@ -63,4 +63,21 @@ void main() {
     expect(room.companionSpot.x, inInclusiveRange(0.0, 1.0));
     expect(room.companionSpot.y, inInclusiveRange(0.0, 1.0));
   });
+
+  test('nothing important hides in the part a phone crops away', () {
+    // The painting fills the screen, so the narrowest phone in circulation -
+    // 20:9 - decides how much of its width survives. Anything authored into
+    // the margins is unreachable there, and a hotspot nobody can tap is
+    // worse than one that was never drawn.
+    const narrowestPhone = 9 / 20;
+    final visible = (narrowestPhone / room.aspectRatio).clamp(0.0, 1.0);
+    final margin = (1 - visible) / 2;
+
+    for (final hotspot in room.hotspots) {
+      expect(hotspot.area.center.dx, inInclusiveRange(margin, 1 - margin),
+          reason: '${hotspot.id} is cropped off a tall phone');
+    }
+    expect(room.companionSpot.x, inInclusiveRange(margin, 1 - margin),
+        reason: 'the companion is cropped off a tall phone');
+  });
 }

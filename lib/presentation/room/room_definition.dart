@@ -80,6 +80,7 @@ class RoomDefinition {
     required this.overlays,
     required this.hotspots,
     required this.companionSpot,
+    this.companionHeight = 0.26,
   });
 
   final String id;
@@ -99,6 +100,14 @@ class RoomDefinition {
   /// Where the companion stands, normalised, as its bottom-centre point.
   final ({double x, double y}) companionSpot;
 
+  /// How tall the companion stands, as a fraction of the frame height.
+  ///
+  /// Data, not code: it is a statement about *this* painting's scale. A
+  /// portrait room is far taller than a landscape one at the same width, so
+  /// a single hardcoded fraction makes the companion either a mouse or a
+  /// bear depending on which illustration is loaded.
+  final double companionHeight;
+
   factory RoomDefinition.fromJson(Map<String, dynamic> json) {
     final spot = json['companionSpot'] as List<dynamic>;
     return RoomDefinition(
@@ -115,6 +124,8 @@ class RoomDefinition {
         x: (spot[0] as num).toDouble(),
         y: (spot[1] as num).toDouble()
       ),
+      companionHeight:
+          (json['companionHeight'] as num?)?.toDouble() ?? 0.26,
     );
   }
 
