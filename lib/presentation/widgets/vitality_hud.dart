@@ -15,9 +15,14 @@ import '../room/room_vitality.dart';
 /// Doc §7: the meter reads as life, not cleanliness. It warms and fills as
 /// the room is cared for and cools and empties when it is neglected.
 class VitalityHud extends StatelessWidget {
-  const VitalityHud({super.key, required this.vitality});
+  const VitalityHud({super.key, required this.vitality, this.momentum = 0});
 
   final RoomVitality vitality;
+
+  /// In-session chain length. Shown only while a chain is actually running -
+  /// spec §5.2 item 10 is explicit that this is never a daily streak, so it
+  /// must not sit there as a standing score to protect.
+  final int momentum;
 
   @override
   Widget build(BuildContext context) {
@@ -46,17 +51,36 @@ class VitalityHud extends StatelessWidget {
               _Hearth(accent: accent, lit: treatment.ambientSparkles),
               const SizedBox(width: 12),
               Column(
+                key: const ValueKey('vitality-body'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'KITCHEN',
-                    style: TextStyle(
-                      color: Color(0xFF9A94A6),
-                      fontSize: 9,
-                      letterSpacing: 2.4,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'KITCHEN',
+                        style: TextStyle(
+                          color: Color(0xFF9A94A6),
+                          fontSize: 9,
+                          letterSpacing: 2.4,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (momentum > 0) ...[
+                        const SizedBox(width: 8),
+                        const Icon(Icons.bolt_rounded,
+                            size: 11, color: Color(0xFFFFCB6B)),
+                        Text(
+                          '$momentum',
+                          style: const TextStyle(
+                            color: Color(0xFFFFCB6B),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 3),
                   AnimatedSwitcher(

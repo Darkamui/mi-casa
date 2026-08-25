@@ -4,7 +4,7 @@
     "roomTypeId": "kitchen",
     "label": "Put the dishes away",
     "baseDurationMinutes": 2.0,
-    "defaultRisePerHour": 0.005952
+    "defaultRisePerHour": 0.041667
   },
   {
     "id": "kitchen.clear_counter",
