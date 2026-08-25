@@ -2,8 +2,22 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../effects/particle_burst.dart';
 import 'room_definition.dart';
 import 'room_vitality.dart';
+
+/// A completion to celebrate, at the point in the painting where it happened.
+///
+/// Carries its own id so a second completion at the same spot restarts the
+/// burst instead of the framework reusing the finished one.
+class RoomCelebration {
+  const RoomCelebration({required this.id, required this.spot});
+
+  final int id;
+
+  /// Normalised 0..1 point in the painting.
+  final ({double x, double y}) spot;
+}
 
 /// The interactive storybook room (direction doc §1, §13).
 ///
@@ -20,6 +34,7 @@ class KitchenRoomView extends StatelessWidget {
     required this.showDishPile,
     required this.companionMood,
     this.showAffordances = true,
+    this.celebration,
     this.onHotspotTap,
     this.onCompanionTap,
     this.debugShowHotspots = false,
@@ -36,6 +51,11 @@ class KitchenRoomView extends StatelessWidget {
   /// Whether hotspots advertise themselves with a pulsing glow. Off while a
   /// quest card or task prompt is up, so the room goes quiet under a modal.
   final bool showAffordances;
+
+  /// Non-null for the length of the celebration beat. Spec §4.1: completing
+  /// something must produce a visible change, and it must happen where the
+  /// work happened.
+  final RoomCelebration? celebration;
 
   final void Function(RoomHotspot hotspot)? onHotspotTap;
   final VoidCallback? onCompanionTap;
@@ -71,9 +91,22 @@ class KitchenRoomView extends StatelessWidget {
                     // The painting and its props take the vitality filter.
                     // The affordances and the companion deliberately do not
                     // - a neglected room must still be legible to tap.
+                    // The colour comes back over a beat rather than snapping.
+                    // Spec §4.1 - the transformation *is* the reward, and a
+                    // reward that has already happened by the time the eye
+                    // arrives was never seen.
                     Positioned.fill(
-                      child: ColorFiltered(
-                        colorFilter: saturationFilter(treatment.saturation),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(
+                          begin: treatment.saturation,
+                          end: treatment.saturation,
+                        ),
+                        duration: const Duration(milliseconds: 1400),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, saturation, child) => ColorFiltered(
+                          colorFilter: saturationFilter(saturation),
+                          child: child,
+                        ),
                         child: Stack(
                           clipBehavior: Clip.hardEdge,
                           children: [
@@ -87,7 +120,8 @@ class KitchenRoomView extends StatelessWidget {
                             // neglected (doc §7).
                             Positioned.fill(
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 600),
+                                duration: const Duration(milliseconds: 1400),
+                                curve: Curves.easeOutCubic,
                                 color: treatment.ambientTint
                                     .withValues(alpha: treatment.tintStrength),
                               ),
@@ -96,8 +130,10 @@ class KitchenRoomView extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (celebration != null) _bloom(),
                     _companion(frame, treatment),
                     ..._hotspots(frame),
+                    if (celebration != null) _burst(celebration!, frame),
                   ],
                 ),
               ),
@@ -118,6 +154,44 @@ class KitchenRoomView extends StatelessWidget {
       height: rect.height,
       child: IgnorePointer(
         child: Image.asset(overlay.asset, fit: BoxFit.contain),
+      ),
+    );
+  }
+
+  /// A warm swell of light across the whole room on completion - the
+  /// "windows brighten" beat of §4.1, without needing a second painting.
+  Widget _bloom() => Positioned.fill(
+        child: IgnorePointer(
+          child: _OneShotFade(
+            key: ValueKey('bloom-${celebration!.id}'),
+            duration: const Duration(milliseconds: 1200),
+            builder: (t) => DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  radius: 0.9,
+                  colors: [
+                    const Color(0xFFFFE2A6).withValues(alpha: 0.30 * t),
+                    const Color(0xFFFFD27D).withValues(alpha: 0.06 * t),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.45, 1.0],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+  Widget _burst(RoomCelebration celebration, Size frame) {
+    const size = 220.0;
+    return Positioned(
+      left: celebration.spot.x * frame.width - size / 2,
+      top: celebration.spot.y * frame.height - size / 2,
+      width: size,
+      height: size,
+      child: ParticleBurst(
+        key: ValueKey('burst-${celebration.id}'),
+        seed: celebration.id,
       ),
     );
   }
@@ -182,6 +256,54 @@ class KitchenRoomView extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+/// Runs 0 -> 1 -> 0 once and stops. Used for beats that must not loop.
+class _OneShotFade extends StatefulWidget {
+  const _OneShotFade({
+    super.key,
+    required this.duration,
+    required this.builder,
+  });
+
+  final Duration duration;
+  final Widget Function(double t) builder;
+
+  @override
+  State<_OneShotFade> createState() => _OneShotFadeState();
+}
+
+class _OneShotFadeState extends State<_OneShotFade>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.duration);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        // Quick swell, slower settle.
+        final eased = t < 0.3
+            ? Curves.easeOut.transform(t / 0.3)
+            : 1 - Curves.easeInOut.transform((t - 0.3) / 0.7);
+        return widget.builder(eased.clamp(0.0, 1.0));
+      },
+    );
   }
 }
 

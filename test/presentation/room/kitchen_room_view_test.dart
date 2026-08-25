@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:micasa/presentation/effects/particle_burst.dart';
 import 'package:micasa/presentation/room/kitchen_room_view.dart';
 import 'package:micasa/presentation/room/room_definition.dart';
 import 'package:micasa/presentation/room/room_vitality.dart';
@@ -21,7 +22,11 @@ const _source = '''
 }
 ''';
 
-Widget _view({bool showAffordances = true, void Function(RoomHotspot)? onTap}) {
+Widget _view({
+  bool showAffordances = true,
+  void Function(RoomHotspot)? onTap,
+  RoomCelebration? celebration,
+}) {
   return MaterialApp(
     home: KitchenRoomView(
       room: RoomDefinition.parse(_source),
@@ -29,6 +34,7 @@ Widget _view({bool showAffordances = true, void Function(RoomHotspot)? onTap}) {
       showDishPile: true,
       companionMood: null,
       showAffordances: showAffordances,
+      celebration: celebration,
       onHotspotTap: onTap,
     ),
   );
@@ -66,5 +72,52 @@ void main() {
     );
 
     expect(tapped?.id, 'sink');
+  });
+
+  testWidgets('a quiet room celebrates nothing', (tester) async {
+    await tester.pumpWidget(_view());
+    await tester.pump();
+
+    expect(find.byType(ParticleBurst), findsNothing);
+  });
+
+  testWidgets('the celebration lands where the work happened', (tester) async {
+    // The sink, not the middle of the screen.
+    final sink = RoomDefinition.parse(_source).hotspotById('sink')!;
+    await tester.pumpWidget(_view(
+      celebration: RoomCelebration(
+        id: 1,
+        spot: (x: sink.area.center.dx, y: sink.area.center.dy),
+      ),
+    ));
+    await tester.pump();
+
+    final size = tester.getSize(find.byType(KitchenRoomView));
+    final frame = coverFrame(size, 1.59879);
+    final origin = tester.getCenter(find.byType(KitchenRoomView));
+    final expected = origin -
+        Offset(frame.width / 2, frame.height / 2) +
+        sink.resolve(frame).center;
+
+    final actual = tester.getCenter(find.byType(ParticleBurst));
+    expect((actual - expected).distance, lessThan(1.0));
+  });
+
+  testWidgets('a second completion restarts the burst rather than reusing it',
+      (tester) async {
+    const spot = (x: 0.5, y: 0.5);
+    await tester
+        .pumpWidget(_view(celebration: const RoomCelebration(id: 1, spot: spot)));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    final first = tester.state(find.byType(ParticleBurst));
+
+    await tester
+        .pumpWidget(_view(celebration: const RoomCelebration(id: 2, spot: spot)));
+    await tester.pump();
+
+    // A new State object means the animation started over. Without the id in
+    // the key, the second completion would inherit a burst already finished.
+    expect(tester.state(find.byType(ParticleBurst)), isNot(same(first)));
   });
 }

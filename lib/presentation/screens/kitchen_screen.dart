@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import '../room/room_vitality.dart';
 import '../scenes/kitchen_scene_controller.dart';
 import '../widgets/combo_card.dart';
 import '../widgets/quest_card.dart';
+import '../widgets/room_restored_banner.dart';
 import '../widgets/single_task_prompt.dart';
 import '../widgets/vitality_hud.dart';
 
@@ -25,6 +28,25 @@ class KitchenScreen extends ConsumerStatefulWidget {
 }
 
 class _KitchenScreenState extends ConsumerState<KitchenScreen> {
+  /// The celebration currently playing, if any. Purely a presentation
+  /// concern - the simulation has no opinion about particles.
+  RoomCelebration? _celebration;
+  int _celebrationCount = 0;
+
+  bool _showRestored = false;
+  Timer? _restoredTimer;
+
+  @override
+  void dispose() {
+    _restoredTimer?.cancel();
+    super.dispose();
+  }
+
+  void _dismissRestored() {
+    _restoredTimer?.cancel();
+    if (mounted) setState(() => _showRestored = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final room = ref.watch(roomDefinitionProvider('kitchen'));
@@ -32,15 +54,41 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     final controller = ref.read(kitchenSessionProvider.notifier);
 
     ref.listen(kitchenSessionProvider, (previous, next) {
-      if (previous?.valueOrNull?.phase == next.valueOrNull?.phase) return;
-      if (next.valueOrNull?.phase != RunPhase.celebrating) return;
+      final phase = next.valueOrNull?.phase;
+      if (previous?.valueOrNull?.phase == phase) return;
+
+      if (phase == RunPhase.restored) {
+        setState(() => _showRestored = true);
+        _restoredTimer?.cancel();
+        // Long enough to land, short enough that it never becomes a wall
+        // between the user and the room.
+        _restoredTimer =
+            Timer(const Duration(milliseconds: 2600), _dismissRestored);
+        return;
+      }
+
+      if (phase != RunPhase.celebrating) return;
 
       // Feedback never waits on I/O (CLAUDE.md): state is already updated,
-      // so haptic and sound fire immediately.
+      // so haptic, sound and particles fire immediately.
       HapticFeedback.mediumImpact();
       SystemSound.play(SystemSoundType.click);
-      Future.delayed(
-          const Duration(milliseconds: 900), controller.finishCelebration);
+
+      final spot = _spotFor(
+        room.valueOrNull,
+        next.valueOrNull?.currentTaskId,
+      );
+      setState(() {
+        _celebrationCount++;
+        _celebration =
+            RoomCelebration(id: _celebrationCount, spot: spot);
+      });
+
+      Future.delayed(const Duration(milliseconds: 900), () {
+        if (!mounted) return;
+        setState(() => _celebration = null);
+        controller.finishCelebration();
+      });
     });
 
     return Scaffold(
@@ -53,6 +101,15 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
         _ => const Center(child: CircularProgressIndicator()),
       },
     );
+  }
+
+  /// Celebrate where the work happened. Falls back to the middle of the room
+  /// only if the task has no painted home.
+  ({double x, double y}) _spotFor(RoomDefinition? definition, String? taskId) {
+    final hotspot =
+        taskId == null ? null : definition?.hotspotForTask(taskId);
+    if (hotspot == null) return (x: 0.5, y: 0.5);
+    return (x: hotspot.area.center.dx, y: hotspot.area.center.dy);
   }
 
   Widget _error(Object error) => Center(
@@ -88,6 +145,7 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
             showDishPile: engine.showsDishPile(state, now),
             showAffordances:
                 state.phase == RunPhase.idle || state.phase == RunPhase.restored,
+            celebration: _celebration,
             companionMood: switch (state.phase) {
               RunPhase.celebrating => CompanionMood.excited,
               RunPhase.comboOffered => CompanionMood.happy,
@@ -138,6 +196,8 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
             onResume: controller.resumeRun,
             onSkip: controller.skipTask,
           ),
+        if (_showRestored && state.phase == RunPhase.restored)
+          RoomRestoredBanner(onDismiss: _dismissRestored),
       ],
     );
   }

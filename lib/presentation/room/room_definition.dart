@@ -134,6 +134,15 @@ class RoomDefinition {
     }
     return null;
   }
+
+  /// Where in the painting a task lives - so a completion can be celebrated
+  /// at the sink rather than in the middle of the screen.
+  RoomHotspot? hotspotForTask(String taskId) {
+    for (final hotspot in hotspots) {
+      if (hotspot.taskId == taskId) return hotspot;
+    }
+    return null;
+  }
 }
 
 Rect _rectFrom(List<dynamic> values, String what) {
