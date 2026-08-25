@@ -4,6 +4,7 @@ import 'entropy_engine.dart';
 import 'models/adjacency_edge.dart';
 import 'models/task_definition.dart';
 import 'models/task_rung.dart';
+import 'voice_grammar.dart';
 
 /// Why the user said no (spec §3.7).
 ///
@@ -64,6 +65,7 @@ class KitchenSession {
     this.runActive = Duration.zero,
     this.activeRung,
     this.rejections = const {},
+    this.extendedBy = Duration.zero,
   });
 
   final RunPhase phase;
@@ -128,6 +130,13 @@ class KitchenSession {
   /// still be shrinking the offer on Friday.
   final Map<String, int> rejections;
 
+  /// Time added to the current offer by "five more minutes" (spec §2.5).
+  ///
+  /// It moves the target, never the clock: [activeElapsed] still reports what
+  /// really happened. Asking for longer is permission to keep going, not a
+  /// way to make five minutes of work count as ten.
+  final Duration extendedBy;
+
   KitchenSession copyWith({
     RunPhase? phase,
     String? currentTaskId,
@@ -143,6 +152,7 @@ class KitchenSession {
     Duration? runActive,
     int? activeRung,
     Map<String, int>? rejections,
+    Duration? extendedBy,
     bool clearCurrentTask = false,
     bool clearComboOffer = false,
     bool clearTaskStartedAt = false,
@@ -165,6 +175,7 @@ class KitchenSession {
       runActive: runActive ?? this.runActive,
       activeRung: clearActiveRung ? null : activeRung ?? this.activeRung,
       rejections: rejections ?? this.rejections,
+      extendedBy: extendedBy ?? this.extendedBy,
     );
   }
 
@@ -328,14 +339,16 @@ class KitchenSessionEngine {
     return taskId == null ? null : taskById(taskId)?.label;
   }
 
-  /// Minutes for whatever is currently on offer, rung included.
+  /// Minutes for whatever is currently on offer - rung and any granted
+  /// extension included.
   double currentMinutes(KitchenSession session) {
     final rung = activeRung(session);
-    if (rung != null) {
-      return session.estimateMinutes[rung.id] ?? rung.durationMinutes;
-    }
-    final taskId = session.currentTaskId;
-    return taskId == null ? 2 : offeredMinutes(session, taskId);
+    final base = rung != null
+        ? session.estimateMinutes[rung.id] ?? rung.durationMinutes
+        : session.currentTaskId == null
+            ? 2.0
+            : offeredMinutes(session, session.currentTaskId!);
+    return base + session.extendedBy.inSeconds / 60.0;
   }
 
   KitchenSession offerQuest(KitchenSession session, String taskId) {
@@ -349,6 +362,7 @@ class KitchenSessionEngine {
       // A fresh run: nothing has been chained yet.
       completedThisRun: const {},
       momentum: 0,
+      extendedBy: Duration.zero,
       clearComboOffer: true,
       clearActiveRung: true,
     );
@@ -483,6 +497,7 @@ class KitchenSessionEngine {
       clearPausedAt: true,
       clearActiveRung: true,
       activeBeforePause: Duration.zero,
+      extendedBy: Duration.zero,
     );
   }
 
@@ -533,6 +548,7 @@ class KitchenSessionEngine {
       momentum: session.momentum + 1,
       runActive: session.runActive + active,
       activeBeforePause: Duration.zero,
+      extendedBy: Duration.zero,
       clearTaskStartedAt: true,
       clearPausedAt: true,
       clearActiveRung: true,
@@ -629,6 +645,7 @@ class KitchenSessionEngine {
       taskStartedAt: now,
       // A new task's clock starts at zero; the run's total keeps counting.
       activeBeforePause: Duration.zero,
+      extendedBy: Duration.zero,
       clearComboOffer: true,
       clearPausedAt: true,
       clearActiveRung: true,
@@ -644,5 +661,56 @@ class KitchenSessionEngine {
       clearCurrentTask: true,
       clearComboOffer: true,
     );
+  }
+
+  /// "Five more minutes" (spec §2.5). Moves the target, never the clock.
+  KitchenSession extendRun(
+    KitchenSession session, [
+    Duration by = const Duration(minutes: 5),
+  ]) {
+    if (session.phase != RunPhase.running) return session;
+    return session.copyWith(extendedBy: session.extendedBy + by);
+  }
+
+  /// Spoken commands (spec §2.5), resolved against whatever is on screen.
+  ///
+  /// The mapping lives here rather than in the widget for the usual reason -
+  /// it is a rule, and rules are testable without a microphone - but also
+  /// because the same word means different things in different phases. "Next"
+  /// is PLAY on an open offer and YES on a combo, and a user with wet hands
+  /// should not have to know which.
+  ///
+  /// Anything that does not apply right now returns the session untouched.
+  /// Voice is an alternative set of hands, never an extra set of powers: it
+  /// cannot reach a transition a tap could not.
+  KitchenSession applyVoice(
+    KitchenSession session,
+    VoiceIntent intent,
+    DateTime now,
+  ) {
+    switch (intent) {
+      case VoiceIntent.done:
+        return completeTask(session, now);
+      case VoiceIntent.next:
+        return switch (session.phase) {
+          RunPhase.questOffered => startRun(session, now),
+          RunPhase.comboOffered => acceptCombo(session, now),
+          RunPhase.celebrating => finishCelebration(session),
+          _ => session,
+        };
+      case VoiceIntent.skip:
+        return switch (session.phase) {
+          RunPhase.running => skipTask(session),
+          RunPhase.questOffered => dismissQuest(session),
+          RunPhase.comboOffered => declineCombo(session),
+          _ => session,
+        };
+      case VoiceIntent.pause:
+        return pauseRun(session, now);
+      case VoiceIntent.resume:
+        return resumeRun(session, now);
+      case VoiceIntent.fiveMoreMinutes:
+        return extendRun(session);
+    }
   }
 }

@@ -8,9 +8,12 @@ import '../../simulation/adjacency_graph.dart';
 import '../../simulation/combo_engine.dart';
 import '../../simulation/content_loader.dart';
 import '../../simulation/kitchen_session.dart';
+import '../../simulation/voice_grammar.dart';
+import '../voice/voice_recognizer.dart';
 
 export '../../simulation/kitchen_session.dart'
     show RunPhase, KitchenSession, KitchenSessionEngine, NotThisReason;
+export '../../simulation/voice_grammar.dart' show VoiceIntent;
 
 /// The clock, as a dependency. Overriding this is how a test drives entropy
 /// forward without waiting for real hours to pass.
@@ -43,6 +46,12 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 final kitchenRepositoryProvider = Provider<KitchenRepository?>(
   (ref) => KitchenRepository(ref.watch(databaseProvider)),
 );
+
+/// On-device speech (spec §2.5). Overridden by whatever platform engine is
+/// bound - and by a fake in tests, which is the only reason the grammar can
+/// be exercised end to end without a microphone.
+final voiceRecognizerProvider =
+    Provider<VoiceRecognizer>((ref) => const UnavailableVoiceRecognizer());
 
 /// Drives the kitchen. Every transition delegates to the pure engine; this
 /// class only supplies the clock, the store, and holds the result.
@@ -125,6 +134,32 @@ class KitchenSceneController extends AsyncNotifier<KitchenSession> {
     final current = state.valueOrNull;
     if (current == null) return Duration.zero;
     return _engine.activeElapsed(current, _now());
+  }
+
+  /// Something was said (spec §2.5).
+  ///
+  /// Returns the intent it resolved to, or null if the utterance meant
+  /// nothing here - the caller uses that to decide whether to acknowledge.
+  /// An unrecognised phrase is silence, never an error: telling someone with
+  /// wet hands that they said it wrong is worse than doing nothing.
+  VoiceIntent? hear(String utterance) {
+    const grammar = VoiceGrammar();
+    final intent = grammar.parse(utterance);
+    if (intent == null) return null;
+
+    // DONE is the one spoken command that writes, so it goes through the same
+    // path a tap does rather than a second, quieter one.
+    if (intent == VoiceIntent.done) {
+      final before = state.valueOrNull;
+      if (before == null || before.phase != RunPhase.running) return null;
+      completeTask();
+      return intent;
+    }
+
+    final before = state.valueOrNull;
+    _apply((s) => _engine.applyVoice(s, intent, _now()));
+    // A command that changed nothing did not apply here.
+    return identical(state.valueOrNull, before) ? null : intent;
   }
 
   void finishCelebration() => _apply(_engine.finishCelebration);

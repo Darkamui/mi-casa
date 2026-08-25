@@ -15,6 +15,7 @@ import '../widgets/quest_card.dart';
 import '../widgets/room_restored_banner.dart';
 import '../widgets/single_task_prompt.dart';
 import '../widgets/vitality_hud.dart';
+import '../widgets/voice_button.dart';
 
 /// The point-and-click kitchen (direction doc §19, §24).
 ///
@@ -173,9 +174,13 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: VitalityHud(vitality: vitality, momentum: state.momentum),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                VitalityHud(vitality: vitality, momentum: state.momentum),
+                const Spacer(),
+                const VoiceButton(),
+              ],
             ),
           ),
         ),
