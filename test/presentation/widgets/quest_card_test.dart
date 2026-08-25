@@ -33,4 +33,20 @@ void main() {
     expect(dismissed, isTrue);
     expect(played, isFalse, reason: 'declining must never start the run');
   });
+
+  testWidgets('the card stays sized to its content, not the screen',
+      (tester) async {
+    // The close button is easy to add in a way that stretches the card to
+    // full width. It should stay a compact card floating over the room.
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(child: QuestCard(onPlay: () {}, onDismiss: () {})),
+      ),
+    ));
+
+    final width = tester.getSize(find.byType(Card)).width;
+    final screen = tester.getSize(find.byType(Scaffold)).width;
+
+    expect(width, lessThan(screen * 0.6));
+  });
 }

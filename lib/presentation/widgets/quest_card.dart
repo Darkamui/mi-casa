@@ -27,63 +27,57 @@ class QuestCard extends StatelessWidget {
     return Card(
       color: const Color(0xFF2B2B33),
       margin: const EdgeInsets.all(24),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 8, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+      // The close button floats in the corner rather than sitting in the
+      // layout: the card must stay sized to its own content, and anything
+      // in a row with the eyebrow stretches it to the full screen width.
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 26, 20, 20),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(width: 32),
-                const Expanded(
-                  child: Text(
-                    'KITCHEN RESCUE',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFFA9C7A0),
-                      fontSize: 12,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.bold,
-                    ),
+                const Text(
+                  'KITCHEN RESCUE',
+                  style: TextStyle(
+                    color: Color(0xFFA9C7A0),
+                    fontSize: 12,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: IconButton(
-                    onPressed: onDismiss,
-                    padding: EdgeInsets.zero,
-                    iconSize: 18,
-                    tooltip: 'Not now',
-                    icon: const Icon(Icons.close, color: Color(0xFF9A9AA6)),
-                  ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.white, fontSize: 22),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  '~${minutes.round()} min',
+                  style:
+                      const TextStyle(color: Color(0xFF9A9AA6), fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(onPressed: onPlay, child: const Text('PLAY')),
               ],
             ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(color: Colors.white, fontSize: 22),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '~${minutes.round()} min',
-                    style:
-                        const TextStyle(color: Color(0xFF9A9AA6), fontSize: 14),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(onPressed: onPlay, child: const Text('PLAY')),
-                ],
+          ),
+          Positioned(
+            top: 2,
+            right: 2,
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: IconButton(
+                onPressed: onDismiss,
+                padding: EdgeInsets.zero,
+                iconSize: 14,
+                tooltip: 'Not now',
+                icon: const Icon(Icons.close, color: Color(0xFF9A9AA6)),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
