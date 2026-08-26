@@ -13,4 +13,25 @@ void main() {
     expect(roomType.name, 'Kitchen');
     expect(roomType.taskIds, ['kitchen.dishes', 'kitchen.clear_counter']);
   });
+
+  test('defaults available to true when the field is absent', () {
+    final roomType = RoomTypeDefinition.fromJson(const {
+      'id': 'kitchen',
+      'name': 'Kitchen',
+      'taskIds': <String>[],
+    });
+
+    expect(roomType.available, isTrue);
+  });
+
+  test('parses available: false', () {
+    final roomType = RoomTypeDefinition.fromJson(const {
+      'id': 'bathroom',
+      'name': 'Bathroom',
+      'taskIds': <String>[],
+      'available': false,
+    });
+
+    expect(roomType.available, isFalse);
+  });
 }

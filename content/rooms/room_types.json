@@ -9,5 +9,23 @@
       "kitchen.garbage",
       "kitchen.new_bag"
     ]
+  },
+  {
+    "id": "living_room",
+    "name": "Living Room",
+    "taskIds": [],
+    "available": false
+  },
+  {
+    "id": "bathroom",
+    "name": "Bathroom",
+    "taskIds": [],
+    "available": false
+  },
+  {
+    "id": "bedroom",
+    "name": "Bedroom",
+    "taskIds": [],
+    "available": false
   }
 ]
