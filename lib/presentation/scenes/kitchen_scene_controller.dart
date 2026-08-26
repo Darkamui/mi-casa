@@ -9,6 +9,7 @@ import '../../simulation/combo_engine.dart';
 import '../../simulation/content_loader.dart';
 import '../../simulation/kitchen_session.dart';
 import '../../simulation/voice_grammar.dart';
+import '../audio/room_audio.dart';
 import '../feedback/haptics.dart';
 import '../photos/camera_photo_store.dart';
 import '../photos/photo_store.dart';
@@ -67,6 +68,21 @@ final hapticsProvider = Provider<Haptics>((ref) {
   ref.onDispose(haptics.cancel);
   return haptics;
 });
+
+/// Sound (spec §4.2). Overridden with [SilentRoomAudio] in tests, and with a
+/// recording double wherever the moments themselves are checked.
+final roomAudioProvider = Provider<RoomAudio>((ref) {
+  final audio = PlayerRoomAudio();
+  ref.onDispose(audio.dispose);
+  return audio;
+});
+
+/// Whether the room is silenced, for as long as the app is open.
+///
+/// Deliberately not persisted in Phase 0: there is no settings screen to
+/// forget it in, and a mute that survives a restart is a mute the user has to
+/// remember they set.
+final mutedProvider = StateProvider<bool>((ref) => false);
 
 /// Whether to offer the photo affordances at all. A device that cannot take
 /// a picture is shown nothing about pictures.

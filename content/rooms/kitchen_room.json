@@ -4,11 +4,12 @@
   "base": "content/art/kitchen/main.png",
   "companionSpot": [0.76, 0.86],
   "companionHeight": 0.14,
+  "lightSpot": [0.5, 0.28],
   "overlays": [
     {
       "id": "dish_pile",
       "asset": "content/art/props/dish_pile.png",
-      "area": [0.4, 0.355, 0.2, 0.075]
+      "area": [0.4, 0.369, 0.215, 0.082]
     }
   ],
   "hotspots": [

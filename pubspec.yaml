@@ -42,6 +42,7 @@ dependencies:
   path: ^1.9.1
   flame: ^1.38.0
   image_picker: ^1.1.2
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,10 @@ flutter:
     - content/art/kitchen/
     - content/art/companion/
     - content/art/props/dish_pile.png
+    # The run bed and the companion's answer. Placeholders - see
+    # content/audio/README.md.
+    - content/audio/run_loop.wav
+    - content/audio/companion_tap.wav
     - content/rooms/room_types.json
     - content/rooms/kitchen_room.json
     - content/tasks/tasks.json

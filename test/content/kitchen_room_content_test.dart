@@ -79,5 +79,21 @@ void main() {
     }
     expect(room.companionSpot.x, inInclusiveRange(margin, 1 - margin),
         reason: 'the companion is cropped off a tall phone');
+
+    for (final overlay in room.overlays) {
+      expect(overlay.area.center.dx, inInclusiveRange(margin, 1 - margin),
+          reason: '${overlay.id} is cropped off a tall phone');
+    }
+  });
+
+  test('a state overlay is big enough to notice', () {
+    // The overlays are how the room says something is wrong (doc §5), and
+    // the only one that exists sits in a sink that is itself a quarter of
+    // the frame. Drawn any smaller it is a smudge, and the room reads as
+    // clean while the HUD says otherwise.
+    for (final overlay in room.overlays) {
+      expect(overlay.area.width, greaterThan(0.12), reason: overlay.id);
+      expect(overlay.area.height, greaterThan(0.05), reason: overlay.id);
+    }
   });
 }

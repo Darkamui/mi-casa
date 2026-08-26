@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../audio/room_audio.dart';
 import '../feedback/haptic_score.dart';
 import '../feedback/haptics.dart';
 import '../room/kitchen_room_view.dart';
@@ -12,7 +13,7 @@ import '../room/room_definition_loader.dart';
 import '../room/room_vitality.dart';
 import '../scenes/kitchen_scene_controller.dart';
 import '../widgets/combo_card.dart';
-import '../widgets/not_this_sheet.dart';
+import '../widgets/mute_button.dart';
 import '../widgets/photo_comparison_sheet.dart';
 import '../widgets/quest_card.dart';
 import '../widgets/room_restored_banner.dart';
@@ -41,8 +42,10 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
   bool _showRestored = false;
   Timer? _restoredTimer;
 
-  /// The five answers of §3.7, open over the quest card.
-  bool _showNotThis = false;
+  /// The companion, mid-answer. Purely a beat - it changes nothing about the
+  /// room or the run.
+  bool _greeting = false;
+  Timer? _greetingTimer;
 
   /// The before/after panel (§2.4), open after the ROOM RESTORED card has had
   /// its moment. Closed for good once dismissed, so it never becomes a thing
@@ -52,10 +55,12 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
   static const _score = HapticScore();
 
   Haptics get _haptics => ref.read(hapticsProvider);
+  RoomAudio get _audio => ref.read(roomAudioProvider);
 
   @override
   void dispose() {
     _restoredTimer?.cancel();
+    _greetingTimer?.cancel();
     super.dispose();
   }
 
@@ -69,6 +74,18 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     final room = ref.watch(roomDefinitionProvider('kitchen'));
     final session = ref.watch(kitchenSessionProvider);
     final controller = ref.read(kitchenSessionProvider.notifier);
+
+    // The bed plays while the clock is running and stops the moment it is
+    // not - a paused timer that keeps humming reads as "still going", which
+    // is exactly the thing pause exists to stop saying.
+    ref.listen(kitchenSessionProvider, (previous, next) {
+      final state = next.valueOrNull;
+      final running = state?.phase == RunPhase.running && !(state!.isPaused);
+      final was = previous?.valueOrNull;
+      final wasRunning = was?.phase == RunPhase.running && !(was!.isPaused);
+      if (running == wasRunning) return;
+      running ? _audio.startMusic() : _audio.stopMusic();
+    });
 
     ref.listen(kitchenSessionProvider, (previous, next) {
       final phase = next.valueOrNull?.phase;
@@ -202,13 +219,14 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
                   state.phase == RunPhase.restored,
               celebration: _celebration,
               companionMood: switch (state.phase) {
+                _ when _greeting => CompanionMood.happy,
                 RunPhase.celebrating => CompanionMood.excited,
                 RunPhase.comboOffered => CompanionMood.happy,
                 RunPhase.restored => CompanionMood.happy,
                 RunPhase.questOffered => CompanionMood.thinking,
                 _ => null,
               },
-              onCompanionTap: () => _offerMostNeeded(state, controller),
+              onCompanionTap: _greetCompanion,
               onHotspotTap: (hotspot) => controller.offerQuest(hotspot.taskId),
             ),
           ),
@@ -220,6 +238,7 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
                 children: [
                   VitalityHud(vitality: vitality, momentum: state.momentum),
                   const Spacer(),
+                  const MuteButton(),
                   const VoiceButton(),
                 ],
               ),
@@ -233,20 +252,12 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
                 eyebrow: _eyebrowFor(state, engine),
                 onPlay: controller.startRun,
                 onDismiss: controller.dismissQuest,
-                onNotThis: () => setState(() => _showNotThis = true),
+                onNotThis: () => controller.notThis(NotThisReason.takesTooLong),
                 onBeforePhoto: _cameraReady()
                     ? () => unawaited(controller.captureBeforePhoto())
                     : null,
                 hasBeforePhoto: state.beforePhoto != null,
               ),
-            ),
-          if (_showNotThis && state.phase == RunPhase.questOffered)
-            NotThisSheet(
-              onDismiss: () => setState(() => _showNotThis = false),
-              onChoose: (reason) {
-                setState(() => _showNotThis = false);
-                controller.notThis(reason);
-              },
             ),
           if (state.phase == RunPhase.comboOffered && state.comboOffer != null)
             Center(
@@ -294,25 +305,21 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     );
   }
 
-  /// The companion suggests rather than decides: it opens whichever task the
-  /// room most needs, which is exactly what the entropy engine already
-  /// knows. Spec §3.2 - runs are companion-initiated.
-  void _offerMostNeeded(
-    KitchenSession state,
-    KitchenSceneController controller,
-  ) {
-    final engine = controller.engine;
-    final now = ref.read(clockProvider)();
-
-    String? worst;
-    var worstLevel = -1.0;
-    for (final task in engine.tasks) {
-      final level = engine.needLevel(state, task.id, now);
-      if (level > worstLevel) {
-        worstLevel = level;
-        worst = task.id;
-      }
-    }
-    if (worst != null) controller.offerQuest(worst);
+  /// Petting the companion (spec §2.2).
+  ///
+  /// It answers and nothing else happens. It used to open the room's most
+  /// neglected task, which made the one warm, no-stakes thing on the screen
+  /// into another way to be handed a chore - so the only safe place to put a
+  /// finger was nowhere.
+  void _greetCompanion() {
+    _audio.play(AudioCue.companion);
+    _greetingTimer?.cancel();
+    setState(() => _greeting = true);
+    _greetingTimer = Timer(
+      const Duration(milliseconds: 900),
+      () {
+        if (mounted) setState(() => _greeting = false);
+      },
+    );
   }
 }

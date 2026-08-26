@@ -23,8 +23,9 @@ class QuestCard extends StatelessWidget {
   /// taps something to see what it is should be able to put it back down.
   final VoidCallback? onDismiss;
 
-  /// Opens the five answers of spec §3.7. Distinct from [onDismiss]: closing
-  /// the card is "not now", NOT THIS is "not this one".
+  /// Asks for a smaller version of the same chore - spec §3.7's ladder.
+  /// Distinct from [onDismiss]: closing the card is "not now", this is "not
+  /// this much". One tap, and the next rung is offered.
   final VoidCallback? onNotThis;
 
   /// Takes the optional "before" (spec §2.4). Null on a device with no camera
@@ -106,7 +107,7 @@ class QuestCard extends StatelessWidget {
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF9A9AA6),
                     ),
-                    child: const Text('NOT THIS'),
+                    child: const Text('SOMETHING SMALLER'),
                   ),
               ],
             ),

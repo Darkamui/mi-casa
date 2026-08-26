@@ -4,6 +4,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import '../effects/particle_burst.dart';
+import 'ambient_life.dart';
 import 'room_definition.dart';
 import 'room_vitality.dart';
 
@@ -149,6 +150,13 @@ class KitchenRoomView extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          // Above the painting, below everything you can touch.
+          Positioned.fill(
+            child: AmbientLife(
+              treatment: treatment,
+              lightSpot: room.lightSpot,
             ),
           ),
           if (celebration != null) _bloom(),

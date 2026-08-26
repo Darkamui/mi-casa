@@ -49,13 +49,28 @@ class _BeforeAfterSliderState extends State<BeforeAfterSlider> {
             fit: StackFit.passthrough,
             children: [
               Image(image: widget.after, fit: BoxFit.cover),
-              ClipRect(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: _split,
-                  child: SizedBox(
-                    width: width,
-                    child: Image(image: widget.before, fit: BoxFit.cover),
+              // Positioned, not an Align with a widthFactor: this Stack hands
+              // its children tight constraints, and a shrink-wrapping Align
+              // under a tight width silently ignores the factor - which drew
+              // the "before" at full size over the "after" and made the pair
+              // look like a single photograph.
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: width * _split,
+                child: ClipRect(
+                  child: OverflowBox(
+                    // The "before" still lays out at full width inside the
+                    // clip, so the two photographs stay registered with each
+                    // other and the divider cuts one continuous image.
+                    alignment: Alignment.centerLeft,
+                    minWidth: 0,
+                    maxWidth: width,
+                    child: SizedBox(
+                      width: width,
+                      child: Image(image: widget.before, fit: BoxFit.cover),
+                    ),
                   ),
                 ),
               ),

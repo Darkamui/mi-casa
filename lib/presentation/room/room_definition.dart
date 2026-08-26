@@ -81,6 +81,7 @@ class RoomDefinition {
     required this.hotspots,
     required this.companionSpot,
     this.companionHeight = 0.26,
+    this.lightSpot = const (x: 0.5, y: 0.3),
   });
 
   final String id;
@@ -108,8 +109,14 @@ class RoomDefinition {
   /// bear depending on which illustration is loaded.
   final double companionHeight;
 
+  /// Where the room's own light comes from, normalised - the window in this
+  /// kitchen. The ambient breathe of doc §7 is centred here, so it belongs to
+  /// the painting rather than to the widget that draws it.
+  final ({double x, double y}) lightSpot;
+
   factory RoomDefinition.fromJson(Map<String, dynamic> json) {
     final spot = json['companionSpot'] as List<dynamic>;
+    final light = json['lightSpot'] as List<dynamic>?;
     return RoomDefinition(
       id: json['id'] as String,
       aspectRatio: (json['aspectRatio'] as num).toDouble(),
@@ -126,6 +133,9 @@ class RoomDefinition {
       ),
       companionHeight:
           (json['companionHeight'] as num?)?.toDouble() ?? 0.26,
+      lightSpot: light == null
+          ? const (x: 0.5, y: 0.3)
+          : (x: (light[0] as num).toDouble(), y: (light[1] as num).toDouble()),
     );
   }
 

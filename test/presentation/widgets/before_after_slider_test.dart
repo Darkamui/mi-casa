@@ -27,15 +27,12 @@ Widget _host() => MaterialApp(
       ),
     );
 
-/// How much of the "before" is showing, 0..1.
-double _split(WidgetTester tester) => tester
-    .widget<Align>(
-      find.descendant(
-        of: find.byType(ClipRect),
-        matching: find.byType(Align),
-      ),
-    )
-    .widthFactor!;
+/// How much of the "before" is showing, 0..1 - measured off the laid-out
+/// clip rather than read from a field, because the bug this guards against
+/// was a widget quietly ignoring the fraction it was given.
+double _split(WidgetTester tester) =>
+    tester.getSize(find.byType(ClipRect)).width /
+    tester.getSize(find.byType(BeforeAfterSlider)).width;
 
 void main() {
   group('the two-image slider (spec 2.4)', () {
@@ -48,6 +45,16 @@ void main() {
           .toList();
 
       expect(images, containsAll(<Object>[_before, _after]));
+    });
+
+    testWidgets('both photographs actually take up space', (tester) async {
+      await tester.pumpWidget(_host());
+
+      // Being in the tree is not enough: the "before" was there all along,
+      // drawn at full width on top of the "after", which reads as one photo.
+      final split = _split(tester);
+      expect(split, greaterThan(0.0));
+      expect(split, lessThan(1.0));
     });
 
     testWidgets('opens with the after taking the larger share',

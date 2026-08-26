@@ -34,7 +34,7 @@ void main() {
     expect(played, isFalse, reason: 'declining must never start the run');
   });
 
-  testWidgets('NOT THIS is offered without being shouted', (tester) async {
+  testWidgets('a smaller version is one tap away', (tester) async {
     var opened = false;
 
     await tester.pumpWidget(MaterialApp(
@@ -43,18 +43,21 @@ void main() {
       ),
     ));
 
-    await tester.tap(find.text('NOT THIS'));
+    await tester.tap(find.text('SOMETHING SMALLER'));
 
+    // One tap, straight to the next rung. It used to open a sheet asking
+    // which of five reasons applied, which turned backing out of a chore
+    // into a second, longer chore.
     expect(opened, isTrue);
   });
 
-  testWidgets('a card with no escape route offers no NOT THIS',
+  testWidgets('a card with no smaller rung offers no way down',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(body: QuestCard(onPlay: () {})),
     ));
 
-    expect(find.text('NOT THIS'), findsNothing);
+    expect(find.text('SOMETHING SMALLER'), findsNothing);
   });
 
   testWidgets('a rung names itself as a rung, not as the chore',
