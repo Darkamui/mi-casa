@@ -8,19 +8,28 @@ import 'package:path_provider/path_provider.dart';
 import 'daos/chore_completions_dao.dart';
 import 'daos/chores_dao.dart';
 import 'daos/entropy_state_dao.dart';
+import 'daos/household_dao.dart';
 import 'daos/rooms_dao.dart';
 import 'daos/runs_dao.dart';
 import 'tables/chore_completions_table.dart';
 import 'tables/chores_table.dart';
 import 'tables/entropy_state_table.dart';
+import 'tables/household_table.dart';
 import 'tables/rooms_table.dart';
 import 'tables/runs_table.dart';
 
 part 'database.g.dart';
 
 @DriftDatabase(
-  tables: [Rooms, Chores, ChoreCompletions, EntropyStates, Runs],
-  daos: [RoomsDao, ChoresDao, ChoreCompletionsDao, EntropyStateDao, RunsDao],
+  tables: [Rooms, Chores, ChoreCompletions, EntropyStates, Runs, Households],
+  daos: [
+    RoomsDao,
+    ChoresDao,
+    ChoreCompletionsDao,
+    EntropyStateDao,
+    RunsDao,
+    HouseholdDao,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
@@ -28,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.open() : this(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// Store timestamps as ISO-8601 text rather than unix seconds.
   ///
@@ -43,6 +52,11 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.createTable(households);
+          }
+        },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },

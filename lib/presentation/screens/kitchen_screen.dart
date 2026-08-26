@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../audio/room_audio.dart';
 import '../feedback/haptic_score.dart';
 import '../feedback/haptics.dart';
+import '../house/app_menu_sheet.dart';
 import '../room/kitchen_room_view.dart';
 import '../room/room_definition.dart';
 import '../room/room_definition_loader.dart';
@@ -238,6 +239,12 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
                 children: [
                   VitalityHud(vitality: vitality, momentum: state.momentum),
                   const Spacer(),
+                  IconButton(
+                    onPressed: () =>
+                        showAppMenuSheet(context, showBackToHouse: true),
+                    tooltip: 'Menu',
+                    icon: const Icon(Icons.menu, color: Colors.white70),
+                  ),
                   const MuteButton(),
                   const VoiceButton(),
                 ],
