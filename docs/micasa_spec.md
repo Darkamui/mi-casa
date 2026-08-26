@@ -68,7 +68,15 @@ If a change in room condition is not visible in the artwork, the change did not 
 
 The concept draft's 5-step wizard (rooms → task editing → cleaning style → theme → first quest) is **rejected**. Use the playable version:
 
-1. App opens directly into a beautiful, slightly messy room. No account. No permissions. No questionnaire.
+1. App launch shows a title screen (branding, an idle companion, "Enter
+   House" / "Settings"). It collects nothing and looks the same on every
+   launch — not a wizard, not a questionnaire. *(Updated 2026-08-26: see
+   `docs/superpowers/specs/2026-08-26-title-screen-house-hub-design.md` —
+   the earlier "app opens directly into a room, no screen before play"
+   version of this step is superseded by explicit product decision.)*
+1a. Tapping Enter House goes to the house hub (room selection), not
+   straight into a room. Everything from here on is unchanged: no
+   account, no permissions, no configuration questionnaire.
 2. The companion notices the user and walks to a dirty object.
    > Want to help?  `[ YES ]`
 3. > Put one thing near you back where it belongs.

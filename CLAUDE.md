@@ -11,7 +11,10 @@ replacement for it.
   Comfortable / Slipping / Struggling / Critical). Floats may exist
   internally.
 - **Onboarding is playable, not configured.** No account, no wizard, no
-  questionnaire on first open.
+  questionnaire. (Updated 2026-08-26: a title screen with a real menu
+  — Enter House / Settings — now precedes play on every launch; it
+  collects nothing and is not a wizard. See spec §2.3 and
+  `docs/superpowers/specs/2026-08-26-title-screen-house-hub-design.md`.)
 - **Verification is by feel, not enforcement.** Reward elapsed active
   time, not checkbox count. No task completes itself.
 - **Voice input ships in Phase 0:** done/next/skip/pause/five-more-minutes,
