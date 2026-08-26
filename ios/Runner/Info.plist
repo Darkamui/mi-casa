@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- The optional before/after pair (spec §2.4). Local-only: MiCasa has
+	     no backend and never uploads or shares a photo. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Take an optional before and after picture of the room you just tidied. The photos stay on this device.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

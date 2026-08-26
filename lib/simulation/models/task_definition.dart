@@ -1,3 +1,5 @@
+import 'task_rung.dart';
+
 class TaskDefinition {
   const TaskDefinition({
     required this.id,
@@ -5,6 +7,7 @@ class TaskDefinition {
     required this.label,
     required this.baseDurationMinutes,
     required this.defaultRisePerHour,
+    this.rungs = const [],
   });
 
   final String id;
@@ -13,6 +16,10 @@ class TaskDefinition {
   final double baseDurationMinutes;
   final double defaultRisePerHour;
 
+  /// The downgrade ladder for this task (spec §3.7), ordered largest first.
+  /// Empty is fine - a one-minute task has nowhere left to fall.
+  final List<TaskRung> rungs;
+
   factory TaskDefinition.fromJson(Map<String, dynamic> json) {
     return TaskDefinition(
       id: json['id'] as String,
@@ -20,6 +27,10 @@ class TaskDefinition {
       label: json['label'] as String,
       baseDurationMinutes: (json['baseDurationMinutes'] as num).toDouble(),
       defaultRisePerHour: (json['defaultRisePerHour'] as num).toDouble(),
+      rungs: [
+        for (final rung in (json['rungs'] as List<dynamic>? ?? const []))
+          TaskRung.fromJson(rung as Map<String, dynamic>),
+      ],
     );
   }
 }

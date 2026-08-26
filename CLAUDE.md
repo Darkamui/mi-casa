@@ -19,7 +19,11 @@ replacement for it.
 - **AI is a rules engine in Phase 0**, not a model call. Never a chat box.
 - **Household multiplayer will be free**, never premium, when it ships.
 - **Name is MiCasa.** (Originally drafted as "Hearthbound" — renamed;
-  see `docs/micasa_spec.md` history if trademark context is needed.)
+  see `docs/micasa_spec.md` history if trademark context is needed. The
+  direction doc still carries the old name in its filename.)
+- **One finished illustration per room**, never a constructed set of
+  furniture sprites. Neglect drains *vitality* (colour, warmth, ambient
+  motion) — it never makes the room ugly. Direction doc §1, §7.
 
 ## Architectural rule (non-negotiable)
 
@@ -49,10 +53,25 @@ multiple homes) until Phase 0 passes its kill criteria (spec §5.5).
 
 ## Stack
 
-Flutter + Rive + Riverpod + Drift/SQLite + Flame. Flame is the settled
-rendering engine for room presentation (`lib/presentation/flame/`) — see
-`docs/superpowers/specs/2026-08-24-flame-kitchen-runtime-design.md`.
-Local-first, no backend, no login, no sync in Phase 0.
+Flutter + Rive + Riverpod + Drift/SQLite. Local-first, no backend, no
+login, no sync in Phase 0. (The direction doc lists Supabase/go_router/
+RevenueCat — those are post-Phase-0 and out of scope here.)
+
+**Rendering is plain Flutter, not a game engine.** See
+`docs/hearthbound_interactive_storybook_direction.md` — the settled
+direction is a *point-and-click interactive storybook*: one finished
+illustration per room, plus invisible hotspots, a few state overlays, and
+the companion, composed with `Stack`/`Positioned`/`Animated*`.
+
+Superseded on 2026-08-24: the Flame engine runtime (`lib/presentation/
+flame/`, 8 parallax layers, depth sorting) and the Godot→sprite pipeline
+(`tools/asset_renderer/`). Both were removed from the room path.
+`docs/superpowers/specs/2026-08-24-flame-kitchen-runtime-design.md` and
+its plan describe the retired approach — do not implement from them.
+
+Do not rebuild rooms out of individual furniture sprites. The painting
+already encodes perspective, lighting, and occlusion; hand-compositing
+props re-creates every problem it solved (see direction doc §21–22).
 
 Note: `sqlite3_flutter_libs` is intentionally **not** a dependency — it's
 EOL. Drift 2.32+ bundles SQLite automatically; use `NativeDatabase`

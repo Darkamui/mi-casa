@@ -1,0 +1,41 @@
+{
+  "id": "kitchen",
+  "aspectRatio": 0.5628,
+  "base": "content/art/kitchen/main.png",
+  "companionSpot": [0.76, 0.86],
+  "companionHeight": 0.14,
+  "lightSpot": [0.5, 0.28],
+  "overlays": [
+    {
+      "id": "dish_pile",
+      "asset": "content/art/props/dish_pile.png",
+      "area": [0.4, 0.369, 0.215, 0.082]
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "sink",
+      "label": "Dishes",
+      "taskId": "kitchen.dishes",
+      "area": [0.4, 0.34, 0.27, 0.105]
+    },
+    {
+      "id": "island",
+      "label": "Wipe Counter",
+      "taskId": "kitchen.wipe_counter",
+      "area": [0.27, 0.465, 0.515, 0.075]
+    },
+    {
+      "id": "back_counter",
+      "label": "Clear Counter",
+      "taskId": "kitchen.clear_counter",
+      "area": [0.05, 0.37, 0.28, 0.06]
+    },
+    {
+      "id": "floor",
+      "label": "Take Out Trash",
+      "taskId": "kitchen.garbage",
+      "area": [0.06, 0.64, 0.16, 0.11]
+    }
+  ]
+}

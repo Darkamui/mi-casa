@@ -41,6 +41,8 @@ dependencies:
   path_provider: ^2.1.6
   path: ^1.9.1
   flame: ^1.38.0
+  image_picker: ^1.1.2
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -68,24 +70,19 @@ flutter:
   uses-material-design: true
 
   assets:
-    - content/art/companion/companion_idle.png
-    - content/art/companion/companion_excited.png
+    # Finished room illustration + state overlays (interactive storybook
+    # direction, docs/hearthbound_interactive_storybook_direction.md).
+    - content/art/kitchen/
+    - content/art/companion/
+    - content/art/props/dish_pile.png
+    # The run bed and the companion's answer. Placeholders - see
+    # content/audio/README.md.
+    - content/audio/run_loop.wav
+    - content/audio/companion_tap.wav
     - content/rooms/room_types.json
+    - content/rooms/kitchen_room.json
     - content/tasks/tasks.json
     - content/adjacency/edges.json
-    - content/clutter/kitchen_clutter_states.json
-    - content/art/rendered/props/fridge/
-    - content/art/rendered/props/stove/
-    - content/art/rendered/props/sink/
-    - content/art/rendered/props/cabinet/
-    - content/art/rendered/props/stool/
-    - content/art/rendered/props/shelf/
-    - content/art/rendered/props/rug/
-    - content/art/rendered/props/plant_01/
-    - content/art/rendered/props/plant_02/
-    - content/art/rendered/props/garbage_bag/
-    - content/art/rendered/props/window/
-    - content/art/rendered/props/curtain/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

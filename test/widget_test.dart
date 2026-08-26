@@ -1,22 +1,30 @@
-import 'package:flame/game.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:micasa/main.dart';
-import 'package:micasa/presentation/flame/kitchen_game.dart';
+import 'package:micasa/presentation/room/kitchen_room_view.dart';
+import 'package:micasa/presentation/scenes/kitchen_scene_controller.dart';
+import 'package:micasa/presentation/widgets/vitality_hud.dart';
 
 void main() {
-  // See test/presentation/flame/kitchen_flame_screen_test.dart for why the
-  // live binding is required: the default FakeAsync-backed binding never
-  // observes the real callback that resolves Sprite.load's image decoding.
-  LiveTestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets('app boots into the kitchen room', (tester) async {
+    await tester.pumpWidget(ProviderScope(
+      // No store: this test is about what the room shows on a first launch,
+      // and opening a real database would drag path_provider in with it.
+      overrides: [kitchenRepositoryProvider.overrideWithValue(null)],
+      child: const MiCasaApp(),
+    ));
+    // Not pumpAndSettle: the hotspot affordances pulse forever by design,
+    // so there is no steady state to settle into.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
-  testWidgets('app boots into the kitchen scene', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: MiCasaApp()));
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 16));
-    }
+    expect(find.byType(KitchenRoomView), findsOneWidget);
+    expect(find.byType(VitalityHud), findsOneWidget);
+    // Coarse verbal state only (spec §2).
+    expect(find.text('Slipping'), findsOneWidget);
 
-    expect(find.text('KITCHEN RESTORED'), findsNothing);
-    expect(find.byType(GameWidget<KitchenGame>), findsOneWidget);
+    // The painting hides its own interaction points, so the only thing
+    // making them discoverable is this marker. One per authored hotspot.
+    expect(find.byType(HotspotAffordance), findsNWidgets(4));
   });
 }
